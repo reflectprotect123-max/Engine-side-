@@ -2,34 +2,39 @@
 (function (global) {
   const SUPABASE_URL = "https://orysjncrksmdfabpuftd.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeXNqbmNya3NtZGZhYnB1ZnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MTE4NzksImV4cCI6MjA5OTk4Nzg3OX0.GTMBfFtH5O6SikzHo75sXGIZoEhmuJ7TvXiACd7T078";
-  const ATHLETE_NETLIFY = 'https://thehybridsystem.netlify.app';
+  // Single source of truth for the WHOOP-proxy + brain-coach backend.
+  // Everything already orbits Supabase (auth, WHOOP token storage, DB), so the
+  // intended endgame is to serve these functions as Supabase Edge Functions,
+  // which share SUPABASE_URL's origin and emit CORS. Migrating off Netlify is
+  // then a change to just these two values:
+  //   BACKEND_BASE = SUPABASE_URL;  FN_PREFIX = '/functions/v1';
+  const BACKEND_BASE = 'https://thehybridsystem.netlify.app';
+  const FN_PREFIX = '/.netlify/functions';
   const NATIVE_APP_ID = 'com.hybrid.athlete';
-  function athleteNetlify() {
-    return ATHLETE_NETLIFY;
-  }
   function nativeAppId() {
     return NATIVE_APP_ID;
   }
+  function fn(name) {
+    return FN_PREFIX + '/' + name;
+  }
   const FN = {
-    connect: '/.netlify/functions/whoop-connect',
-    sync: '/.netlify/functions/whoop-sync',
-    status: '/.netlify/functions/integrations-status',
-    disconnect: '/.netlify/functions/integrations-disconnect'
+    connect: fn('whoop-connect'),
+    sync: fn('whoop-sync'),
+    status: fn('integrations-status'),
+    disconnect: fn('integrations-disconnect')
   };
   function resolveProxyBase() {
-    const ATHLETE_NETLIFY = athleteNetlify();
+    // Relative (same-origin) when the page is already served from the backend
+    // host; absolute BACKEND_BASE everywhere else (Capacitor, localhost, Pages).
     try {
       const loc = global.location;
-      if (!loc || !loc.hostname) return ATHLETE_NETLIFY;
+      if (!loc || !loc.hostname) return BACKEND_BASE;
       const host = String(loc.hostname).toLowerCase();
       let ownHost = '';
-      try { ownHost = new URL(ATHLETE_NETLIFY).hostname.toLowerCase(); } catch (_) {}
+      try { ownHost = new URL(BACKEND_BASE).hostname.toLowerCase(); } catch (_) {}
       if (ownHost && host === ownHost) return '';
-      if (loc.protocol === 'file:' || loc.protocol === 'capacitor:') return ATHLETE_NETLIFY;
-      if (host === 'localhost' || host === '127.0.0.1') return ATHLETE_NETLIFY;
-      if (host.endsWith('.github.io')) return ATHLETE_NETLIFY;
-      return ATHLETE_NETLIFY;
-    } catch (_) { return ATHLETE_NETLIFY; }
+      return BACKEND_BASE;
+    } catch (_) { return BACKEND_BASE; }
   }
   function fnUrl(path, query) {
     const q = query ? '?' + new URLSearchParams(query) : '';
@@ -433,6 +438,6 @@
   global.Whoop = {
     cardHtml, metaLine, renderPanels, autoSyncIfPossible, hydrateAuth, syncAuthEmail,
     signIn, signOut, connect, sync, syncAll, disconnect, refreshStatus,
-    client, token, email, waitForSupabase, fnUrl, resolveProxyBase
+    client, token, email, waitForSupabase, fnUrl, fn, resolveProxyBase
   };
 })(window);

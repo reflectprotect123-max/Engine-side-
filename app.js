@@ -808,7 +808,7 @@ async function askCoach() {
   renderCoachSheetLog();
   try {
     const coachUrl = (window.Whoop && typeof Whoop.fnUrl === 'function')
-      ? Whoop.fnUrl('/.netlify/functions/brain-coach')
+      ? Whoop.fnUrl(typeof Whoop.fn === 'function' ? Whoop.fn('brain-coach') : '/.netlify/functions/brain-coach')
       : 'https://thehybridsystem.netlify.app/.netlify/functions/brain-coach';
     const res = await fetch(coachUrl, {
       method: 'POST',
