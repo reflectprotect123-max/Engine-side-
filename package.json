@@ -8,6 +8,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "node scripts/bundle-adaptive.mjs",
+    "build:site": "node scripts/build-site.mjs",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test && node --test engine.test.js library.test.js session.test.js",
     "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node checks/engine-app.smoke.mjs"
