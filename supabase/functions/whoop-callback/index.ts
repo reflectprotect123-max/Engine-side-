@@ -3,10 +3,36 @@ import { methodGuard, preflight, redirect } from '../_shared/http.ts';
 import { consumePending, saveToken, syncRecord } from '../_shared/oauth.ts';
 import { exchangeWhoopCode, whoopFetch } from '../_shared/whoop.ts';
 
+function allowedOutcome(outcome: string) {
+  return /^[a-z0-9_=&-]+$/i.test(outcome) ? outcome : 'status=error';
+}
+
+function nativeDonePage(outcome: string): Response {
+  const q = allowedOutcome(outcome);
+  const deep = `${nativeReturnUrl()}?${q}`;
+  const intent = `intent://whoop?${q}#Intent;scheme=com.hybrid.engine;package=com.hybrid.engine;end`;
+  const html = `<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Engine</title>
+<meta http-equiv="refresh" content="0;url=${deep}">
+</head>
+<body style="font-family:system-ui,sans-serif;background:#111;color:#eee;padding:28px;line-height:1.5">
+<p>WHOOP finished. Returning to The Engine…</p>
+<p><a href="${deep}" style="color:#5ec4b4">Open The Engine</a></p>
+<p><a href="${intent}" style="color:#5ec4b4">Open The Engine (Android)</a></p>
+<p style="opacity:.7">If the app does not open, switch back to The Engine and tap Sync.</p>
+<script>location.replace(${JSON.stringify(deep)});</script>
+</body></html>`;
+  return new Response(html, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
 function finish(kind: string, outcome: string) {
-  const dest = kind === 'native'
-    ? `${nativeReturnUrl()}?${outcome}`
-    : `${enginePublicOrigin()}/?integration=whoop&${outcome}`;
+  if (kind === 'native') return nativeDonePage(outcome);
+  const dest = `${enginePublicOrigin()}/?integration=whoop&${allowedOutcome(outcome)}`;
   return redirect(dest, { 'cache-control': 'no-store' });
 }
 

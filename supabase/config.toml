@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.whoop-webhook]
 verify_jwt = false
+
+[functions.whoop-health]
+verify_jwt = false

@@ -14,7 +14,11 @@ Deno.serve(async (req) => {
     const identity = await ownerFromRequest(req);
     const state = newState(WHOOP_STATE_LENGTH);
     const location = createWhoopAuthUrl(state);
-    await savePending('whoop', state, { owner: identity.owner, kind: 'native', sid: null });
+    await savePending('whoop', state, {
+      owner: identity.owner,
+      kind: native ? 'native' : 'browser',
+      sid: native ? null : 'web',
+    });
     if (native) {
       return json({ authorizeUrl: location, returnUrl: nativeReturnUrl() }, 200, { 'cache-control': 'no-store' });
     }

@@ -123,7 +123,11 @@
     const url = fnUrl(path, opts.query);
     const res = await fetch(url, {
       method,
-      headers: { authorization: 'Bearer ' + t, accept: 'application/json' },
+      headers: {
+        authorization: 'Bearer ' + t,
+        apikey: SUPABASE_ANON,
+        accept: 'application/json',
+      },
       cache: 'no-store'
     });
     let body = null;
@@ -299,6 +303,21 @@
       if (!opts.quiet) { ui.busy = false; renderPanels(); }
     }
   }
+  let awaitingWhoopReturn = false;
+  async function finishWhoopReturn() {
+    ui.message = 'Finishing WHOOP…';
+    renderPanels();
+    try {
+      await refreshStatus();
+      if (st().connected) await sync({ quiet: true });
+      ui.message = st().connected ? 'WHOOP connected' : 'WHOOP did not finish — tap Connect again';
+      if (st().connected) awaitingWhoopReturn = false;
+    } catch (err) {
+      ui.message = (err && err.message) || 'Could not finish WHOOP connect';
+    }
+    renderPanels();
+    if (typeof global.render === 'function') global.render();
+  }
   async function connect() {
     if (ui.busy) return;
     ui.busy = true; ui.message = 'Opening WHOOP…'; renderPanels();
@@ -306,9 +325,11 @@
       const body = await api(FN.connect, { query: { client: 'native', appId: nativeAppId() } });
       const url = body && typeof body.authorizeUrl === 'string' ? body.authorizeUrl : '';
       if (!/^https:\/\//i.test(url)) throw new Error('WHOOP connect URL missing');
+      awaitingWhoopReturn = true;
       await openWhoopAuthorize(url);
-      ui.message = 'Finish consent in WHOOP, then this app should reopen';
+      ui.message = 'Finish consent in WHOOP, then return here and tap Sync if the app does not reopen';
     } catch (err) {
+      awaitingWhoopReturn = false;
       ui.message = err.code === 'auth_required' ? 'Sign in before connecting WHOOP' : (err.message || 'Connect failed');
       throw err;
     } finally { ui.busy = false; renderPanels(); }
@@ -437,9 +458,11 @@
     }
     global.open(url, '_blank', 'noopener');
   }
+  let nativeWhoopBound = false;
   function bindNativeWhoopReturn() {
     const App = capPlugin('App');
-    if (!App || typeof App.addListener !== 'function') return;
+    if (!App || typeof App.addListener !== 'function' || nativeWhoopBound) return false;
+    nativeWhoopBound = true;
     App.addListener('appUrlOpen', async function (data) {
       const u = String((data && data.url) || '');
       if (u.indexOf('whoop') === -1) return;
@@ -447,18 +470,26 @@
       if (Browser && typeof Browser.close === 'function') {
         try { await Browser.close(); } catch (_) {}
       }
-      ui.message = 'Finishing WHOOP…';
-      renderPanels();
-      try {
-        await refreshStatus();
-        if (st().connected) await sync({ quiet: true });
-        ui.message = st().connected ? 'WHOOP connected' : 'WHOOP did not finish — tap Connect again';
-      } catch (err) {
-        ui.message = (err && err.message) || 'Could not finish WHOOP connect';
-      }
-      renderPanels();
-      if (typeof global.render === 'function') global.render();
+      awaitingWhoopReturn = true;
+      await finishWhoopReturn();
     });
+    App.addListener('appStateChange', async function (state) {
+      if (!state || !state.isActive || !awaitingWhoopReturn) return;
+      const Browser = capPlugin('Browser');
+      if (Browser && typeof Browser.close === 'function') {
+        try { await Browser.close(); } catch (_) {}
+      }
+      await finishWhoopReturn();
+    });
+    return true;
+  }
+  function bindNativeWhoopReturnWhenReady() {
+    if (bindNativeWhoopReturn()) return;
+    let n = 0;
+    const t = global.setInterval(function () {
+      n += 1;
+      if (bindNativeWhoopReturn() || n > 40) global.clearInterval(t);
+    }, 250);
   }
   async function autoSyncIfPossible() {
     try {
@@ -477,5 +508,5 @@
     signIn, signOut, connect, sync, syncAll, disconnect, refreshStatus,
     client, token, email, waitForSupabase, fnUrl, resolveProxyBase
   };
-  bindNativeWhoopReturn();
+  bindNativeWhoopReturnWhenReady();
 })(window);

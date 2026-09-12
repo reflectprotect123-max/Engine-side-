@@ -1,6 +1,6 @@
 const CORS: Record<string, string> = {
   'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization,content-type',
+  'access-control-allow-headers': 'authorization,content-type,apikey,accept,x-client-info',
   'access-control-allow-methods': 'GET,POST,OPTIONS',
 };
 
