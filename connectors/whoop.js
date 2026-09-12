@@ -5,7 +5,7 @@
   }
   const SUPABASE_URL = cfg().supabaseUrl || 'https://orysjncrksmdfabpuftd.supabase.co';
   const SUPABASE_ANON = cfg().supabaseAnon || '';
-  const NATIVE_APP_ID = 'com.hybrid.athlete';
+  const NATIVE_APP_ID = 'com.hybrid.engine';
   function nativeAppId() {
     return NATIVE_APP_ID;
   }

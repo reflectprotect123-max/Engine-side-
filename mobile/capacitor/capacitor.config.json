@@ -1,0 +1,11 @@
+{
+  "appId": "com.hybrid.engine",
+  "appName": "The Engine",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

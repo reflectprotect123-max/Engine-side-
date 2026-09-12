@@ -43,5 +43,5 @@ export function whoopCallbackUrl(): string {
 }
 
 export function nativeReturnUrl(): string {
-  return Deno.env.get('NATIVE_RETURN_URL') || 'com.hybrid.athlete://whoop';
+  return Deno.env.get('NATIVE_RETURN_URL') || 'com.hybrid.engine://whoop';
 }

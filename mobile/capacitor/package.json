@@ -1,0 +1,14 @@
+{
+  "name": "the-engine-android",
+  "private": true,
+  "scripts": {
+    "sync": "bash ../../scripts/assemble-pages.sh www && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/core": "^7.4.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.4"
+  }
+}

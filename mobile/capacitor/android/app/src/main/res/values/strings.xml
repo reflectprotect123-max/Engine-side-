@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">The Engine</string>
+    <string name="title_activity_main">The Engine</string>
+    <string name="package_name">com.hybrid.engine</string>
+    <string name="custom_url_scheme">com.hybrid.engine</string>
+</resources>
