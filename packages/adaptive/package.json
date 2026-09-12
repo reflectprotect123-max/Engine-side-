@@ -1,0 +1,17 @@
+{
+  "name": "@hybrid/adaptive",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "@types/node": "^22.13.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
