@@ -4,3 +4,5 @@ _site/
 .DS_Store
 *.log
 .pnpm-store/
+supabase/.temp/
+.supabase/

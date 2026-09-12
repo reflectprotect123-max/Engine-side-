@@ -21,7 +21,7 @@ must(html.includes('hybrid-product" content="engine"'), 'html product stamp');
 must(html.includes('The Engine'), 'Engine title');
 must(html.includes('engine-config.js'), 'loads engine-config');
 must(html.includes('adaptive-bundle.js'), 'loads adaptive bundle');
-must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes("functionsProvider: 'netlify-legacy'"), 'functions still gated until Edge Functions ship');
+must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes("functionsProvider: 'supabase'"), 'WHOOP/coach use Supabase Edge Functions');
 must(existsSync(join(root, 'scripts/assemble-pages.sh')), 'Pages assemble script');
 must(existsSync(join(root, '.github/workflows/pages.yml')), 'Pages workflow');
 must(html.includes('engine.js'), 'loads engine.js');

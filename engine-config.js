@@ -9,7 +9,7 @@
      * Netlify until Edge Functions exist. Flip to 'supabase' after those deploy;
      * then calls go to `${supabaseUrl}/functions/v1/<name>` with the Auth JWT.
      */
-    functionsProvider: 'netlify-legacy',
+    functionsProvider: 'supabase',
     netlifyLegacyOrigin: 'https://thehybridsystem.netlify.app'
   };
 })(window);
