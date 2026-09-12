@@ -7,5 +7,14 @@
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "CapacitorUpdater": {
+      "appId": "com.hybrid.engine",
+      "autoUpdate": true,
+      "defaultChannel": "live",
+      "appReadyTimeout": 10000,
+      "responseTimeout": 20
+    }
   }
 }

@@ -1,6 +1,6 @@
 import { enginePublicOrigin, nativeReturnUrl, ownerFromRequest } from '../_shared/auth.ts';
 import { json, methodGuard, preflight, redirect } from '../_shared/http.ts';
-import { newState, savePending } from '../_shared/oauth.ts';
+import { newState, recordOAuthEvent, savePending } from '../_shared/oauth.ts';
 import { createWhoopAuthUrl, WHOOP_STATE_LENGTH, WhoopError } from '../_shared/whoop.ts';
 
 Deno.serve(async (req) => {
@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
       kind: native ? 'native' : 'browser',
       sid: native ? null : 'web',
     });
+    await recordOAuthEvent('whoop', { stage: 'connect', ok: true, native, error: null });
     if (native) {
       return json({ authorizeUrl: location, returnUrl: nativeReturnUrl() }, 200, { 'cache-control': 'no-store' });
     }

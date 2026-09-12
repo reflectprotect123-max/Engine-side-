@@ -21,7 +21,7 @@
   }
   function resolveProxyBase() {
     const c = cfg();
-    if ((c.functionsProvider || 'netlify-legacy') === 'supabase') {
+    if ((c.functionsProvider || 'supabase') === 'supabase') {
       return String(c.supabaseUrl || SUPABASE_URL).replace(/\/$/, '') + '/functions/v1';
     }
     const origin = c.netlifyLegacyOrigin || 'https://thehybridsystem.netlify.app';
@@ -40,7 +40,7 @@
     const q = query ? '?' + new URLSearchParams(query) : '';
     const base = resolveProxyBase().replace(/\/$/, '');
     const c = cfg();
-    if ((c.functionsProvider || 'netlify-legacy') === 'supabase') {
+    if ((c.functionsProvider || 'supabase') === 'supabase') {
       return base + '/' + name + q;
     }
     const rel = '/.netlify/functions/' + name + q;
@@ -304,9 +304,13 @@
     }
   }
   let awaitingWhoopReturn = false;
+  function paint() {
+    renderPanels();
+    if (typeof global.render === 'function') global.render();
+  }
   async function finishWhoopReturn() {
     ui.message = 'Finishing WHOOP…';
-    renderPanels();
+    paint();
     try {
       await refreshStatus();
       if (st().connected) await sync({ quiet: true });
@@ -315,24 +319,40 @@
     } catch (err) {
       ui.message = (err && err.message) || 'Could not finish WHOOP connect';
     }
-    renderPanels();
-    if (typeof global.render === 'function') global.render();
+    paint();
+  }
+  async function pollWhoopLinked() {
+    for (let i = 0; i < 45; i += 1) {
+      await new Promise(function (resolve) { global.setTimeout(resolve, 2000); });
+      if (!awaitingWhoopReturn) return;
+      try {
+        await refreshStatus();
+        if (st().connected) {
+          await finishWhoopReturn();
+          return;
+        }
+      } catch (_) {}
+    }
   }
   async function connect() {
     if (ui.busy) return;
-    ui.busy = true; ui.message = 'Opening WHOOP…'; renderPanels();
+    ui.busy = true; ui.message = 'Opening WHOOP…'; paint();
     try {
       const body = await api(FN.connect, { query: { client: 'native', appId: nativeAppId() } });
       const url = body && typeof body.authorizeUrl === 'string' ? body.authorizeUrl : '';
       if (!/^https:\/\//i.test(url)) throw new Error('WHOOP connect URL missing');
       awaitingWhoopReturn = true;
       await openWhoopAuthorize(url);
-      ui.message = 'Finish consent in WHOOP, then return here and tap Sync if the app does not reopen';
+      ui.message = 'Finish Allow in WHOOP, then return here. This screen updates when it saves.';
+      paint();
+      pollWhoopLinked();
     } catch (err) {
       awaitingWhoopReturn = false;
       ui.message = err.code === 'auth_required' ? 'Sign in before connecting WHOOP' : (err.message || 'Connect failed');
+      paint();
+      global.alert(ui.message);
       throw err;
-    } finally { ui.busy = false; renderPanels(); }
+    } finally { ui.busy = false; paint(); }
   }
   async function disconnect() {
     if (ui.busy) return;
@@ -506,6 +526,7 @@
   global.Whoop = {
     cardHtml, metaLine, renderPanels, autoSyncIfPossible, hydrateAuth, syncAuthEmail,
     signIn, signOut, connect, sync, syncAll, disconnect, refreshStatus,
+    uiMessage: function () { return ui.message || ''; },
     client, token, email, waitForSupabase, fnUrl, resolveProxyBase
   };
   bindNativeWhoopReturnWhenReady();

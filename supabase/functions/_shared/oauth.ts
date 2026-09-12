@@ -11,6 +11,14 @@ export function newState(length = 8): string {
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '').slice(0, length);
 }
 
+export async function recordOAuthEvent(provider: string, event: Record<string, unknown>) {
+  try {
+    await setJson(`oauth:last:${provider}`, { ...event, at: new Date().toISOString() });
+  } catch (error) {
+    console.error('[oauth-event]', (error as Error)?.message || error);
+  }
+}
+
 export async function savePending(provider: string, state: string, identity: { owner: string; kind?: string; sid?: string | null }) {
   if (!identity?.owner) throw new Error('Pending OAuth record needs an owner');
   const kind = identity.kind === 'user' || identity.kind === 'native' ? 'native' : 'browser';

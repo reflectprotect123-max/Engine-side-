@@ -8,7 +8,8 @@
     "@capacitor/android": "^7.4.4",
     "@capacitor/app": "^7.1.2",
     "@capacitor/browser": "^7.0.5",
-    "@capacitor/core": "^7.4.4"
+    "@capacitor/core": "^7.4.4",
+    "@capgo/capacitor-updater": "^7.51.15"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.4"

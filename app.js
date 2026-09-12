@@ -1,6 +1,6 @@
 const BRAIN_BUILD = 'THE-hybrid-engine-v1';
 const STORAGE_KEY = 'THE-hybrid-engine-v1';
-const APP_BUILD = 'engine-apk-1.0.2';
+const APP_BUILD = 'engine-apk-1.0.3';
 
 let otaInfo = { status: '', current: '', next: '', latest: '' };
 
@@ -652,6 +652,9 @@ function meHtml() {
         <div class="card account-compact">
           <p class="account-email">${esc(w.email)}</p>
           <p class="stub">WHOOP · ${w.connected ? 'Connected' : 'Not linked yet'} · ${esc(APP_BUILD)}</p>
+          ${window.Whoop && typeof Whoop.uiMessage === 'function' && Whoop.uiMessage()
+            ? `<p class="stub signin-msg">${esc(Whoop.uiMessage())}</p>`
+            : ''}
           <div class="account-actions">
             ${w.connected
               ? '<button type="button" class="btn" onclick="Whoop.syncAll()">Sync WHOOP</button>'

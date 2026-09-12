@@ -1,6 +1,6 @@
 import { enginePublicOrigin, nativeReturnUrl } from '../_shared/auth.ts';
 import { methodGuard, preflight, redirect } from '../_shared/http.ts';
-import { consumePending, saveToken, syncRecord } from '../_shared/oauth.ts';
+import { consumePending, recordOAuthEvent, saveToken, syncRecord } from '../_shared/oauth.ts';
 import { exchangeWhoopCode, whoopFetch } from '../_shared/whoop.ts';
 
 function allowedOutcome(outcome: string) {
@@ -46,11 +46,20 @@ Deno.serve(async (req) => {
     const q = new URL(req.url).searchParams;
     const state = (q.get('state') || '').trim();
     const pending = await consumePending('whoop', state);
-    if (!pending) return finish('browser', 'status=error&message=invalid_oauth_state');
+    if (!pending) {
+      await recordOAuthEvent('whoop', { stage: 'callback', ok: false, error: 'invalid_oauth_state', hasState: !!state });
+      return finish('browser', 'status=error&message=invalid_oauth_state');
+    }
     kind = pending.kind;
-    if (q.get('error')) return finish(kind, 'status=denied');
+    if (q.get('error')) {
+      await recordOAuthEvent('whoop', { stage: 'callback', ok: false, error: 'denied', kind });
+      return finish(kind, 'status=denied');
+    }
     const code = (q.get('code') || '').trim();
-    if (!code) return finish(kind, 'status=error&message=invalid_oauth_response');
+    if (!code) {
+      await recordOAuthEvent('whoop', { stage: 'callback', ok: false, error: 'invalid_oauth_response', kind });
+      return finish(kind, 'status=error&message=invalid_oauth_response');
+    }
     const token = await exchangeWhoopCode(code);
     const profile = await whoopFetch('/user/profile/basic', token.access_token);
     const providerUserId = profile?.user_id ?? profile?.id;
@@ -62,9 +71,11 @@ Deno.serve(async (req) => {
       providerUserId,
       profile: { firstName: profile.first_name || '', lastName: profile.last_name || '' },
     });
+    await recordOAuthEvent('whoop', { stage: 'callback', ok: true, error: null, kind });
     return finish(kind, 'status=connected');
   } catch (error) {
     console.error('[whoop-callback]', (error as Error)?.message || error);
+    await recordOAuthEvent('whoop', { stage: 'callback', ok: false, error: 'connection_failed', kind });
     return finish(kind, 'status=error&message=connection_failed');
   }
 });
