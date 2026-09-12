@@ -124,7 +124,7 @@
       <div class="shell-screen shell-screen--library">
         <div class="lib-head-row">
           <button type="button" class="lib-back" onclick="LibraryView.goList()">←</button>
-          <h1>Session Template</h1>
+          <h1>Engine session</h1>
           <button type="button" class="lib-text-btn" onclick="LibraryView.reorder()">Reorder</button>
         </div>
         <div class="lib-field">
