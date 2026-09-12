@@ -12,5 +12,6 @@ mobile/capacitor/android/.gradle/
 mobile/capacitor/android/app/build/
 mobile/capacitor/android/build/
 *.apk
+!/TheEngine-debug.apk
 *.aab
 local.properties
