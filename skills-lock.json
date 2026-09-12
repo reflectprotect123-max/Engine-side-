@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "48646eeec87b27067502d8bd450484faf08af588df783706b1571ee72f2d918c"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
+    },
+    "mem-search": {
+      "source": "thedotmack/claude-mem",
+      "sourceType": "github",
+      "skillPath": "plugin/skills/mem-search/SKILL.md",
+      "computedHash": "6058bee763732e6c85f77523e97ad27f476e73ee44fbfdcf105a218ef1dd52e0"
+    }
+  }
+}
