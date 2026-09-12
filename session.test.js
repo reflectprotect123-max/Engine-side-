@@ -77,3 +77,35 @@ test('startSession never opens a kg TRACK page from a leftover lift block', () =
   assert.equal(work[0].logMode, 'engine');
   assert.equal(work[0].machine, 'bike');
 });
+
+test('Open from last Close softens when WHOOP recovery is low', () => {
+  const prev = globalThis.S;
+  globalThis.S = {
+    checkin: { '2026-09-11': { whoopRecovery: 20 } },
+    engineAnchors: { bike: { watts: 200 } },
+  };
+  try {
+    const s = HybridSession.startSession({
+      date: '2026-09-11',
+      letter: 'A',
+      plan: {
+        title: 'Bike',
+        blocks: [{
+          kind: 'engine',
+          letter: 'A',
+          title: 'Bike',
+          machine: 'bike',
+          structure: 'intervals',
+          effort: 'medium',
+          workSec: 15,
+          restSec: 45,
+          rounds: 4,
+          section: 'The Engine',
+        }],
+      },
+    });
+    assert.equal(s.logs.A.engine.target.watts, 188);
+  } finally {
+    globalThis.S = prev;
+  }
+});

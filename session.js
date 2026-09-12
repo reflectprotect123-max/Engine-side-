@@ -71,7 +71,15 @@
     }
     if (page.logMode === 'engine' && !session.logs[page.id].engine && root.HybridEngine) {
       const anchors = session.engineAnchors || {};
-      const ready = root.HybridEngine.readyLog(page, root.HybridAdaptive, anchors[page.machine] || null);
+      const day = session.date;
+      const checkin = (root.S && root.S.checkin && day && root.S.checkin[day]) || {};
+      const rec = Number(checkin.whoopRecovery);
+      const ready = root.HybridEngine.readyLog(
+        page,
+        root.HybridAdaptive,
+        anchors[page.machine] || null,
+        Number.isFinite(rec) && rec > 0 ? rec : null,
+      );
       session.logs[page.id] = { ...session.logs[page.id], ...ready };
     }
     return session.logs[page.id];

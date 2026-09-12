@@ -68,7 +68,29 @@
     return t;
   }
 
-  function openPiece(piece, lastClose, adaptive) {
+  function typedFor(piece, modality) {
+    if (modality === 'split') return piece.typedSplitSec;
+    if (modality === 'rpm') return piece.typedRpm;
+    if (modality === 'watts') return piece.typedWatts;
+    return null;
+  }
+
+  function softenTarget(target, modality, recovery, adaptive) {
+    const A = ad(adaptive);
+    if (!A || typeof A.softenOpen !== 'function') return target;
+    const rec = recovery == null ? null : Number(recovery);
+    const next = emptyTarget();
+    if (modality === 'split' && target.splitSec != null) {
+      next.splitSec = A.softenOpen(target.splitSec, 'split', rec);
+    } else if (modality === 'rpm' && target.rpm != null) {
+      next.rpm = A.softenOpen(target.rpm, 'rpm', rec);
+    } else if (modality === 'watts' && target.watts != null) {
+      next.watts = A.softenOpen(target.watts, 'watts', rec);
+    }
+    return next;
+  }
+
+  function openPiece(piece, lastClose, adaptive, recovery) {
     const A = ad(adaptive);
     const modality = modalityFor(piece.machine, piece);
     if (modality === 'none' || !A) {
@@ -83,15 +105,18 @@
       typedRpm: piece.typedRpm,
     });
     if (!opened || !opened.ok) return { ok: false, modality, target: emptyTarget() };
-    const target = targetFromOpen(opened, modality);
+    let target = targetFromOpen(opened, modality);
+    const typed = typedFor(piece, modality);
+    const hasTyped = typed != null && Number.isFinite(Number(typed));
+    if (!hasTyped) target = softenTarget(target, modality, recovery, A);
     const blank = (modality === 'watts' && target.watts == null)
       || (modality === 'split' && target.splitSec == null)
       || (modality === 'rpm' && target.rpm == null);
     return { ok: true, skipped: blank, modality, target };
   }
 
-  function readyLog(piece, adaptive, lastClose) {
-    const opened = openPiece(piece, lastClose || null, adaptive);
+  function readyLog(piece, adaptive, lastClose, recovery) {
+    const opened = openPiece(piece, lastClose || null, adaptive, recovery);
     return {
       completed: false,
       note: '',
@@ -211,6 +236,10 @@
     return s;
   }
 
+  function skipRestAndStart(log, now) {
+    return startWork(skipRest(log), now);
+  }
+
   function closePiece(log, adaptive) {
     const A = ad(adaptive);
     const e = log.engine;
@@ -257,6 +286,7 @@
     tick,
     rateWork,
     skipRest,
+    skipRestAndStart,
     closePiece,
     rxText,
     machineTitle(id) { return machineMeta(id).title; },

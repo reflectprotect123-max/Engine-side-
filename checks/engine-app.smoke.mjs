@@ -57,6 +57,8 @@ must(readFileSync(join(root, 'logger.js'), 'utf8').includes('cooked: !!log.engin
 must(!readFileSync(join(root, 'logger.js'), 'utf8').includes('Leave the gym already recovering'), 'logger copy is not Strength gym');
 must(lib.includes("lane: kind") || lib.includes("lane: 'engine'"), 'templates are engine lane');
 must(readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextCond'), 'Next calls adaptive cond');
+must(readFileSync(join(root, 'engine.js'), 'utf8').includes('softenOpen'), 'Open applies WHOOP soften');
+must(readFileSync(join(root, 'logger.js'), 'utf8').includes('skipRestAndStart'), 'Skip rest starts next work');
 must(!readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextLift'), 'Engine product never calls lift Next');
 must(readFileSync(join(root, 'logger.js'), 'utf8').includes('How hard was that'), 'RPE after work');
 must(js.includes('function trnEngineHtml'), 'Training Engine cards');
