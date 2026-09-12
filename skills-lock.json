@@ -18,6 +18,26 @@
       "sourceType": "github",
       "skillPath": "plugin/skills/mem-search/SKILL.md",
       "computedHash": "6058bee763732e6c85f77523e97ad27f476e73ee44fbfdcf105a218ef1dd52e0"
+    },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md"
+    },
+    "image-to-code": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/image-to-code-skill/SKILL.md"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md"
+    },
+    "awesome-design-md": {
+      "source": "VoltAgent/awesome-design-md",
+      "sourceType": "github",
+      "skillPath": "design-md/*/DESIGN.md"
     }
   }
 }
