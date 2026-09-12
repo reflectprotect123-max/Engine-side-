@@ -133,7 +133,11 @@
     let body = null;
     try { body = await res.json(); } catch (_) { body = null; }
     if (!res.ok) {
-      const e = new Error((body && (body.error || body.message)) || ('WHOOP request failed (' + res.status + ')'));
+      const raw = (body && (body.error || body.message)) || ('WHOOP request failed (' + res.status + ')');
+      const friendly = (res.status === 401 || raw === 'unauthorized')
+        ? 'Sign in again in The Engine, then tap Connect WHOOP'
+        : raw;
+      const e = new Error(friendly);
       e.status = res.status; e.body = body; throw e;
     }
     return body;

@@ -26,7 +26,7 @@ must(readFileSync(join(root, 'connectors/whoop.js'), 'utf8').includes("Browser.o
 must(readFileSync(join(root, 'connectors/whoop.js'), 'utf8').includes("appUrlOpen"), 'native WHOOP listens for Engine deep link');
 must(readFileSync(join(root, 'connectors/whoop.js'), 'utf8').includes("appStateChange"), 'native WHOOP finishes if user switches back');
 must(readFileSync(join(root, 'supabase/functions/_shared/http.ts'), 'utf8').includes('apikey'), 'Edge CORS allows apikey from the APK');
-must(js.includes("engine-apk-1.0.3"), 'Me tab shows APK build stamp');
+must(js.includes("engine-apk-1.0.4"), 'Me tab shows APK build stamp');
 must(readFileSync(join(root, 'mobile/capacitor/capacitor.config.json'), 'utf8').includes('CapacitorUpdater'), 'Capgo updater in Capacitor config');
 must(readFileSync(join(root, 'mobile/capacitor/package.json'), 'utf8').includes('@capgo/capacitor-updater'), 'Capgo plugin dependency');
 must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes('/functions/v1/www/'), 'public origin is supabase www host');

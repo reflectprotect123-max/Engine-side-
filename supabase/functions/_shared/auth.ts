@@ -10,19 +10,16 @@ export function serviceClient() {
 }
 
 export async function ownerFromRequest(req: Request): Promise<{ owner: string; userId: string }> {
-  const url = Deno.env.get('SUPABASE_URL') || '';
-  const anon = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const auth = req.headers.get('authorization') || '';
-  if (!auth.toLowerCase().startsWith('bearer ')) {
+  const jwt = auth.replace(/^Bearer\s+/i, '').trim();
+  if (!jwt) {
     const err = new Error('unauthorized');
     (err as Error & { status: number }).status = 401;
     throw err;
   }
-  const userClient = createClient(url, anon, {
-    global: { headers: { authorization: auth } },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await userClient.auth.getUser();
+  // Pass the JWT into getUser. A header-only client leaves session empty on Edge,
+  // and this project issues ES256 user tokens (JWKS), not HS256 anon-key tokens.
+  const { data, error } = await serviceClient().auth.getUser(jwt);
   if (error || !data.user?.id) {
     const err = new Error('unauthorized');
     (err as Error & { status: number }).status = 401;

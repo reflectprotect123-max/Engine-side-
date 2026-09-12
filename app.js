@@ -1,6 +1,6 @@
 const BRAIN_BUILD = 'THE-hybrid-engine-v1';
 const STORAGE_KEY = 'THE-hybrid-engine-v1';
-const APP_BUILD = 'engine-apk-1.0.3';
+const APP_BUILD = 'engine-apk-1.0.4';
 
 let otaInfo = { status: '', current: '', next: '', latest: '' };
 
