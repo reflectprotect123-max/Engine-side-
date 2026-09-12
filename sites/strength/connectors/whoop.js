@@ -1,11 +1,11 @@
-/* WHOOP bridge — tokens stay on Engine Edge Functions + engine.integration_kv. */
+/* WHOOP bridge — tokens stay on the shared Supabase Edge store (strength owner prefix s:). */
 (function (global) {
   function cfg() {
-    return global.ENGINE_CONFIG || {};
+    return global.STRENGTH_CONFIG || {};
   }
   const SUPABASE_URL = cfg().supabaseUrl || 'https://orysjncrksmdfabpuftd.supabase.co';
   const SUPABASE_ANON = cfg().supabaseAnon || '';
-  const NATIVE_APP_ID = 'com.hybrid.engine';
+  const NATIVE_APP_ID = 'com.hybrid.athlete';
   function nativeAppId() {
     return NATIVE_APP_ID;
   }
@@ -24,7 +24,8 @@
   }
   function fnUrl(path, query) {
     const name = functionName(path);
-    const q = query ? '?' + new URLSearchParams(query) : '';
+    const params = Object.assign({ product: 'strength' }, query || {});
+    const q = '?' + new URLSearchParams(params);
     return resolveProxyBase() + '/' + name + q;
   }
   let sb = null;
@@ -107,6 +108,7 @@
       headers: {
         authorization: 'Bearer ' + t,
         apikey: SUPABASE_ANON,
+        'x-hybrid-product': 'strength',
         accept: 'application/json',
       },
       cache: 'no-store'
@@ -116,7 +118,7 @@
     if (!res.ok) {
       const raw = (body && (body.error || body.message)) || ('WHOOP request failed (' + res.status + ')');
       const friendly = (res.status === 401 || raw === 'unauthorized')
-        ? 'Sign in again in The Engine, then tap Connect WHOOP'
+        ? 'Sign in again in TRACK, then tap Connect WHOOP'
         : raw;
       const e = new Error(friendly);
       e.status = res.status; e.body = body; throw e;

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static site for GitHub Pages — Engine runtime only, not skills or tests.
+# Static site for Capacitor www + Supabase Storage (engine-web).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="${1:-"$ROOT/_site"}"

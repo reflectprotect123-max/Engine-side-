@@ -1,10 +1,29 @@
 # Hosting
 
-Engine site: `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/www/`
+All Hybrid products in this GitHub account run on **one Supabase project**: `orysjncrksmdfabpuftd`.
 
-WHOOP OAuth: Edge Functions. Redirect URI must stay  
+| Surface | URL | Storage bucket |
+| --- | --- | --- |
+| The Engine | `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/www/` | `engine-web` |
+| TRACK (Strength) | `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/strength/` | `strength-web` |
+| Brain / hybrid1 landing | `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/brain/` | `brain-web` |
+
+WHOOP OAuth callback (Engine + TRACK, product is in the pending record):  
 `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-callback`
 
-Do **not** point a WHOOP **webhook** at `whoop-callback`. Webhooks go to  
-`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-webhook`  
-(or leave only the Netlify `whoop-webhook`).
+WHOOP webhook:  
+`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-webhook`
+
+Concept2 callback:  
+`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/concept2-callback`
+
+Open Food Facts proxy:  
+`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/off-proxy`
+
+Do not use Netlify or GitHub Pages. Keep the Strength Netlify WHOOP redirect registered until every athlete APK has switched to these URLs, then delete it.
+
+Ship static files:
+
+```bash
+SUPABASE_ACCESS_TOKEN=… bash scripts/ship-sites.sh
+```

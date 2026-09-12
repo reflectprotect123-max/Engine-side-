@@ -16,7 +16,9 @@ Do not merge this back into `apps/athlete/` or `apps/engine/` on strengthside.
 
 ## Hosting
 
-Keep **Supabase** project `orysjncrksmdfabpuftd` (Auth + optional later Engine tables). Static site: **GitHub Pages**, not Netlify. See `HOSTING.md`.
+Keep **Supabase** project `orysjncrksmdfabpuftd` for Auth, Edge Functions, Storage, and every public site (`functions/v1/www/`, `functions/v1/strength/`, `functions/v1/brain/`). See `HOSTING.md`.
+
+Do not merge Strength TRACK into The Engine UI. TRACK is hosted from `sites/strength/` on the same project, with a different WHOOP owner prefix.
 
 ## Play
 

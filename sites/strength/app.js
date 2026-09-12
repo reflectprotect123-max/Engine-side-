@@ -1,6 +1,6 @@
-const BRAIN_BUILD = 'THE-hybrid-engine-v1';
-const STORAGE_KEY = 'THE-hybrid-engine-v1';
-const APP_BUILD = 'engine-apk-1.0.5';
+const BRAIN_BUILD = 'THE-brain-v1';
+const STORAGE_KEY = 'THE-brain-v1';
+const APP_BUILD = 'THE-brain-v9';
 
 let otaInfo = { status: '', current: '', next: '', latest: '' };
 
@@ -19,7 +19,7 @@ const defaultState = () => ({
   loggerOpen: false,
   library: null,
   sessions: {},
-  engineAnchors: {},
+  planSync: { acks: { template: {}, session: {} }, snapshotRev: 0, lastPlan: null },
   libUi: { screen: 'list', tid: null, tab: 'exercises', q: '', selected: [], draft: {}, date: '', bid: null },
   notifications: 0,
   chatUnread: 0,
@@ -71,6 +71,7 @@ function save() {
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
   window.S = S;
+  if (window.PlanSync && typeof PlanSync.schedulePush === 'function') PlanSync.schedulePush();
 }
 
 function today() {
@@ -241,8 +242,8 @@ function topBarHtml() {
       <div class="home-brand">
         <span class="home-mark" aria-hidden="true">TH</span>
         <div class="home-brand-text">
-          <b>THE ENGINE</b>
-          <small>Conditioning</small>
+          <b>HYBRID</b>
+          <small>Athlete</small>
         </div>
       </div>
       <div class="home-top-actions">
@@ -371,6 +372,58 @@ function trainingHomeHtml() {
 
 const homeHtml = trainingHomeHtml;
 
+/** Reference plan from HPP training screen (screenshot match). */
+const TRAINING_DEMO = {
+  dots: { '2026-09-07': true, '2026-09-09': true, '2026-09-11': true },
+  blocks: [
+    {
+      kind: 'warmup',
+      letter: 'A',
+      title: 'Deadlift Warm-Up',
+      items: [
+        { n: 1, text: 'Foam Roll Hamstrings x 60s each side – small 1-2” motion', note: 'All foam rolling should be non-painful so remove pressure as needed' },
+        { n: 2, text: 'Active Straight Leg Raises x 10 reps each side' },
+        { n: 3, text: 'Bird Dogs: 3 x 3-5 each' },
+        { n: 4, text: 'BW Glute Bridge: 3 x 5 with a 1 count at top of each rep. Rest as needed.' },
+        { n: 5, text: 'KB RDLs: 3 x 5. Rest 60s.' },
+        { n: 6, text: 'Box Jump Variation (your choice): 3 x 3. Rest 45-60s.', note: 'Jump for maximal height to a moderate height box.' },
+      ],
+      footer: 'For Completion',
+    },
+    {
+      kind: 'section',
+      label: 'STRENGTH/POWER',
+      badge: { icon: 'trophy', text: 'For Weight' },
+    },
+    { kind: 'lift', letter: 'B', title: 'Snatch Grip Rack Deadlift', prescription: '6 x 3', notes: ['increase weight each set', 'set at mid shin', 'straps are acceptable'] },
+    { kind: 'section', label: 'STRENGTH/POWER' },
+    { kind: 'lift', letter: 'C', title: 'Barbell Lateral Squat', prescription: '3 x 8' },
+    { kind: 'section', label: 'STRENGTH/POWER' },
+    { kind: 'lift', letter: 'D', title: 'Goblet Box Squat', prescription: '3 x 12' },
+    { kind: 'section', label: 'STRENGTH/POWER' },
+    { kind: 'lift', letter: 'E', title: 'Reverse Hypers', prescription: '4 x 25' },
+    { kind: 'section', label: 'STRENGTH/POWER' },
+    { kind: 'lift', letter: 'F1', title: 'Double Leg Banded Leg Curls', prescription: '4 x 25' },
+    { kind: 'lift', letter: 'F2', title: 'Garhammer Raises', prescription: '4 x MAX' },
+    { kind: 'section', label: 'STRENGTH/POWER' },
+    {
+      kind: 'recovery',
+      letter: 'G',
+      title: 'Recovery Breathing',
+      bullets: [
+        '10 Nasal Breaths',
+        '5 second inhale',
+        '1-second hold at the top',
+        '5 second exhale',
+        '1-second pause at the bottom',
+      ],
+      note: 'Turn off the music and make sure you’re in a relaxing state.',
+      goal: 'The goal is to start the recovery process before leaving the gym',
+      footer: 'For Completion',
+    },
+  ],
+};
+
 function trainingPlanForDate(iso) {
   if (window.HybridLibrary) {
     S.library = HybridLibrary.ensure(S.library);
@@ -378,6 +431,7 @@ function trainingPlanForDate(iso) {
     if (fromLib) return fromLib;
   }
   if (S.trainingPlans && S.trainingPlans[iso]) return S.trainingPlans[iso];
+  if (iso >= '2026-09-07' && iso <= '2026-09-13') return TRAINING_DEMO;
   return null;
 }
 
@@ -414,7 +468,7 @@ function trainingCalendarHtml() {
   const libDots = (S.library && S.library.assignments)
     ? Object.fromEntries(Object.keys(S.library.assignments).map((d) => [d, true]))
     : {};
-  const dotMap = { ...libDots, ...((plan && plan.dots) || {}) };
+  const dotMap = { ...((TRAINING_DEMO && TRAINING_DEMO.dots) || {}), ...libDots, ...((plan && plan.dots) || {}) };
   return `
     <div class="cal-strip cal-strip--training" role="tablist" aria-label="Training calendar">
       ${days
@@ -477,18 +531,6 @@ function trnLiftHtml(block, opts = {}) {
     </article>${ss}`;
 }
 
-function trnEngineHtml(block) {
-  return `
-    <article class="trn-block trn-block--engine" onclick="startTrainingSession('${esc(block.letter)}')">
-      <span class="trn-letter trn-letter--engine">${esc(block.letter)}</span>
-      <div class="trn-lift-body">
-        <p class="trn-engine-kicker">The Engine</p>
-        <h3 class="trn-lift-title">${esc(block.title)}</h3>
-        <p class="trn-lift-rx">${esc(block.prescription)}</p>
-      </div>
-    </article>`;
-}
-
 function trnRecoveryHtml(block) {
   const bullets = (block.bullets || []).map((b) => `<li>${esc(b)}</li>`).join('');
   return `
@@ -527,7 +569,6 @@ function trainingBlocksHtml(iso) {
         const superset = !!(a && b && a[1] === b[1] && Number(b[2]) === Number(a[2]) + 1);
         return trnLiftHtml(block, { superset });
       }
-      if (block.kind === 'engine') return trnEngineHtml(block);
       if (block.kind === 'recovery') return trnRecoveryHtml(block);
       return '';
     })
@@ -568,7 +609,7 @@ function openLibraryForDay() {
   S.library = window.HybridLibrary ? HybridLibrary.ensure(S.library) : S.library;
   const tid = S.library && S.library.assignments && S.library.assignments[S.selectedDate];
   if (tid && window.LibraryView) LibraryView.open(tid);
-  else if (window.LibraryView) LibraryView.createEngine();
+  else if (window.LibraryView) LibraryView.create();
   else render();
 }
 
@@ -651,10 +692,7 @@ function meHtml() {
         ${meAppSectionHtml()}
         <div class="card account-compact">
           <p class="account-email">${esc(w.email)}</p>
-          <p class="stub">WHOOP · ${w.connected ? 'Connected' : 'Not linked yet'} · ${esc(APP_BUILD)}</p>
-          ${window.Whoop && typeof Whoop.uiMessage === 'function' && Whoop.uiMessage()
-            ? `<p class="stub signin-msg">${esc(Whoop.uiMessage())}</p>`
-            : ''}
+          <p class="stub">WHOOP · ${w.connected ? 'Connected' : 'Not linked yet'}</p>
           <div class="account-actions">
             ${w.connected
               ? '<button type="button" class="btn" onclick="Whoop.syncAll()">Sync WHOOP</button>'
@@ -669,7 +707,7 @@ function meHtml() {
       <div class="eyebrow">Account</div>
       <h1>Sign in</h1>
       ${meAppSectionHtml()}
-      <p class="stub page-lead">The Engine. Conditioning only — not Strength.</p>
+      <p class="stub page-lead">Same email and password as THE Hybrid Engine. After sign-in you land on a blank slate — no demo sessions.</p>
       <div id="whoopCard"></div>
     </div>`;
 }
@@ -730,7 +768,7 @@ function fabAction(kind) {
   }
   if (kind === 'session') {
     S.tab = 'library';
-    if (window.LibraryView) LibraryView.createEngine();
+    if (window.LibraryView) LibraryView.create();
     else render();
     return;
   }
@@ -812,12 +850,13 @@ async function askCoach() {
   try {
     const coachUrl = (window.Whoop && typeof Whoop.fnUrl === 'function')
       ? Whoop.fnUrl('brain-coach')
-      : String((window.ENGINE_CONFIG && ENGINE_CONFIG.supabaseUrl) || 'https://orysjncrksmdfabpuftd.supabase.co').replace(/\/$/, '') + '/functions/v1/brain-coach';
+      : String((window.STRENGTH_CONFIG && STRENGTH_CONFIG.supabaseUrl) || 'https://orysjncrksmdfabpuftd.supabase.co').replace(/\/$/, '') + '/functions/v1/brain-coach?product=strength';
     const res = await fetch(coachUrl, {
       method: 'POST',
       headers: {
         authorization: 'Bearer ' + (await Whoop.token()),
-        apikey: (window.ENGINE_CONFIG && ENGINE_CONFIG.supabaseAnon) || '',
+        apikey: (window.STRENGTH_CONFIG && STRENGTH_CONFIG.supabaseAnon) || '',
+        'x-hybrid-product': 'strength',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
@@ -846,7 +885,9 @@ window.save = save;
 window.today = today;
 window.dailyCheckin = dailyCheckin;
 window.readinessScore = readinessScore;
-window.touchRecord = function () {};
+window.touchRecord = function () {
+  if (window.PlanSync) PlanSync.schedulePush();
+};
 window.num = num;
 window.resetBlankSlate = resetBlankSlate;
 window.setTab = setTab;
@@ -875,10 +916,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (window.Whoop && typeof Whoop.hydrateAuth === 'function') {
     try { await Whoop.hydrateAuth(); } catch (_) { /* offline / SDK */ }
   }
+  if (window.PlanSync && typeof PlanSync.syncNow === 'function') {
+    try { await PlanSync.syncNow(); } catch (_) { /* offline / unsigned */ }
+  }
   await refreshOtaStatus(false);
   render();
 });
 
-if ('serviceWorker' in navigator && !/\/functions\/v1\//.test(location.pathname || '')) {
+if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js').catch(() => {});
 }

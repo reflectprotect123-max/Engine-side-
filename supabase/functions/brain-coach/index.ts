@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .map((m: any) => ({ role: m.role, content: String(m.content) })),
     { role: 'user', content: message },
   ];
-  const origin = Deno.env.get('ENGINE_PUBLIC_ORIGIN') || 'https://reflectprotect123-max.github.io/Engine-side-/';
+  const origin = Deno.env.get('ENGINE_PUBLIC_ORIGIN') || 'https://orysjncrksmdfabpuftd.supabase.co/functions/v1/www/';
   const upstream = await fetch(OPENROUTER_URL, {
     method: 'POST',
     headers: {
