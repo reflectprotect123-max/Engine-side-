@@ -41,7 +41,7 @@ must(existsSync(join(root, 'sites/strength/strength-config.js')), 'vendored TRAC
 must(!readFileSync(join(root, 'sites/strength/connectors/whoop.js'), 'utf8').includes('netlify'), 'TRACK whoop is not Netlify');
 must(!readFileSync(join(root, 'sites/strength/app.js'), 'utf8').includes('netlify'), 'TRACK app.js is not Netlify');
 must(readFileSync(join(root, 'sites/strength/connectors/whoop.js'), 'utf8').includes("x-hybrid-product"), 'TRACK WHOOP sends product header');
-must(existsSync(join(root, 'supabase/functions/concept2-connect/index.ts')), 'Concept2 connect is Edge');
+must(!existsSync(join(root, 'supabase/functions/concept2-connect/index.ts')), 'Concept2 Logbook is retired');
 must(existsSync(join(root, 'supabase/functions/off-proxy/index.ts')), 'nutrition OFF proxy is Edge');
 must(html.includes('engine.js'), 'loads engine.js');
 must(!html.includes('plan-sync.js'), 'Engine does not use Strength plan sync');

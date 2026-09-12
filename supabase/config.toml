@@ -27,15 +27,6 @@ verify_jwt = false
 [functions.whoop-health]
 verify_jwt = false
 
-[functions.concept2-connect]
-verify_jwt = true
-
-[functions.concept2-callback]
-verify_jwt = false
-
-[functions.concept2-sync]
-verify_jwt = true
-
 [functions.off-proxy]
 verify_jwt = false
 

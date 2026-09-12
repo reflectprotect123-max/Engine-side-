@@ -9,17 +9,12 @@ Deno.serve(async (req) => {
   const denied = methodGuard(req, ['POST']);
   if (denied) return denied;
   const provider = new URL(req.url).searchParams.get('provider');
-  if (provider !== 'whoop' && provider !== 'concept2') return json({ error: 'invalid_provider' }, 400);
+  if (provider !== 'whoop') return json({ error: 'invalid_provider' }, 400);
   let owner: string;
   try {
     ({ owner } = await ownerFromRequest(req));
   } catch {
     return json({ error: 'unauthorized' }, 401);
-  }
-  if (provider === 'concept2') {
-    const data = await loadData('concept2', owner);
-    await removeToken('concept2', owner, data?.providerUserId);
-    return json({ ok: true, provider: 'concept2' });
   }
   const data = await loadData('whoop', owner);
   const token = await loadToken('whoop', owner) as any;

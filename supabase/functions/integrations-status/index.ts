@@ -13,11 +13,9 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: 'unauthorized' }, 401);
   }
-  const [whoopToken, whoop, concept2Token, concept2] = await Promise.all([
+  const [whoopToken, whoop] = await Promise.all([
     loadToken('whoop', owner),
     loadData('whoop', owner),
-    loadToken('concept2', owner),
-    loadData('concept2', owner),
   ]);
   const normalized = whoop?.normalized && typeof whoop.normalized === 'object'
     ? {
@@ -31,14 +29,8 @@ Deno.serve(async (req) => {
       capturedAt: whoop.normalized.capturedAt || null,
     }
     : null;
-  const concept2Results = Array.isArray(concept2?.normalized) ? concept2.normalized : [];
   return json({
     whoop: { connected: Boolean(whoopToken), lastSyncAt: whoop?.syncedAt || null, sampleDate: normalized?.date || null, normalized },
-    concept2: {
-      connected: Boolean(concept2Token),
-      lastSyncAt: concept2?.syncedAt || null,
-      resultCount: concept2Results.length,
-      latest: concept2Results[0]?.startedAt || null,
-    },
+    concept2: { connected: false, lastSyncAt: null, resultCount: 0, latest: null },
   });
 });

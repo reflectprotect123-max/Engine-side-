@@ -14,8 +14,7 @@ WHOOP OAuth callback (Engine + TRACK, product is in the pending record):
 WHOOP webhook:  
 `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-webhook`
 
-Concept2 callback:  
-`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/concept2-callback`
+Concept2 Logbook is retired. Ignore any Concept2 OAuth app / Netlify callback.
 
 Open Food Facts proxy:  
 `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/off-proxy`

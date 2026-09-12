@@ -199,10 +199,6 @@
     var lines = '';
     var w = st();
     lines += statusChip('WHOOP', !!w.connected, w.connected ? metaLine() : 'not connected');
-    if (global.Concept2 && typeof global.Concept2.metaLine === 'function') {
-      var c2 = (global.S && global.S.settings && global.S.settings.concept2) || {};
-      lines += statusChip('Concept2', !!c2.connected, global.Concept2.metaLine());
-    }
     return lines;
   }
   function cardHtml() {
@@ -371,29 +367,6 @@
         }
       } catch (err) {
         bits.push('WHOOP: ' + ((err && err.message) || 'failed'));
-      }
-
-      /* blank slate */
-
-      /* blank slate */
-
-      if (global.Concept2 && typeof global.Concept2.syncIfLinked === 'function') {
-        try {
-          ui.message = 'Syncing Concept2…';
-          renderPanels();
-          var c2 = await global.Concept2.syncIfLinked();
-          if (c2 && c2.ok) {
-            bits.push(c2.summary ? 'Concept2 (' + c2.summary + ')' : 'Concept2');
-          } else if (c2 && c2.reason === 'not_linked') {
-            bits.push('Concept2 (not linked)');
-          } else if (c2 && c2.reason === 'auth_required') {
-            bits.push('Concept2 (sign-in required)');
-          } else {
-            bits.push('Concept2: ' + ((c2 && c2.message) || 'failed'));
-          }
-        } catch (err) {
-          bits.push('Concept2: ' + ((err && err.message) || 'failed'));
-        }
       }
 
       ui.message = 'Synced: ' + bits.join(' · ');
