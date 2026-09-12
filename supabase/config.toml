@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.www]
 verify_jwt = false
+
+[functions.whoop-webhook]
+verify_jwt = false

@@ -306,14 +306,8 @@
       const body = await api(FN.connect, { query: { client: 'native', appId: nativeAppId() } });
       const url = body && typeof body.authorizeUrl === 'string' ? body.authorizeUrl : '';
       if (!/^https:\/\//i.test(url)) throw new Error('WHOOP connect URL missing');
-      global.open(url, '_blank', 'noopener');
-      ui.message = 'Finish consent in the WHOOP window, then tap Sync';
-      const onFocus = async function () {
-        global.removeEventListener('focus', onFocus);
-        try { await refreshStatus(); if (st().connected) await sync(); }
-        catch (err) { ui.message = err.message || 'Could not finish WHOOP connect'; renderPanels(); }
-      };
-      global.addEventListener('focus', onFocus);
+      await openWhoopAuthorize(url);
+      ui.message = 'Finish consent in WHOOP, then this app should reopen';
     } catch (err) {
       ui.message = err.code === 'auth_required' ? 'Sign in before connecting WHOOP' : (err.message || 'Connect failed');
       throw err;
@@ -430,6 +424,42 @@
     if (typeof global.setTab === 'function') global.setTab('me');
     else renderPanels();
   }
+  function capPlugin(name) {
+    try {
+      return global.Capacitor && global.Capacitor.Plugins && global.Capacitor.Plugins[name];
+    } catch (_) { return null; }
+  }
+  async function openWhoopAuthorize(url) {
+    const Browser = capPlugin('Browser');
+    if (Browser && typeof Browser.open === 'function') {
+      await Browser.open({ url: url });
+      return;
+    }
+    global.open(url, '_blank', 'noopener');
+  }
+  function bindNativeWhoopReturn() {
+    const App = capPlugin('App');
+    if (!App || typeof App.addListener !== 'function') return;
+    App.addListener('appUrlOpen', async function (data) {
+      const u = String((data && data.url) || '');
+      if (u.indexOf('whoop') === -1) return;
+      const Browser = capPlugin('Browser');
+      if (Browser && typeof Browser.close === 'function') {
+        try { await Browser.close(); } catch (_) {}
+      }
+      ui.message = 'Finishing WHOOP…';
+      renderPanels();
+      try {
+        await refreshStatus();
+        if (st().connected) await sync({ quiet: true });
+        ui.message = st().connected ? 'WHOOP connected' : 'WHOOP did not finish — tap Connect again';
+      } catch (err) {
+        ui.message = (err && err.message) || 'Could not finish WHOOP connect';
+      }
+      renderPanels();
+      if (typeof global.render === 'function') global.render();
+    });
+  }
   async function autoSyncIfPossible() {
     try {
       await syncAuthEmail();
@@ -447,4 +477,5 @@
     signIn, signOut, connect, sync, syncAll, disconnect, refreshStatus,
     client, token, email, waitForSupabase, fnUrl, resolveProxyBase
   };
+  bindNativeWhoopReturn();
 })(window);

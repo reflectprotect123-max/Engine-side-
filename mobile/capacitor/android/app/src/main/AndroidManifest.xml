@@ -26,7 +26,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="@string/custom_url_scheme" />
+                <data android:scheme="com.hybrid.engine" android:host="whoop" />
+                <data android:scheme="com.hybrid.engine" />
             </intent-filter>
 
         </activity>
