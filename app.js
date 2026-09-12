@@ -875,6 +875,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   render();
 });
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !/\/functions\/v1\//.test(location.pathname || '')) {
   navigator.serviceWorker.register('./service-worker.js').catch(() => {});
 }

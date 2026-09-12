@@ -1,29 +1,16 @@
 # Hosting — keep Supabase, drop Netlify for The Engine
 
-Netlify is leftover from the Strength/Brain athlete site. **The Engine does not own it.** Do not delete Strength’s Netlify sites until Strength and Brain have moved.
+Live origin (this agent enabled it): **`https://orysjncrksmdfabpuftd.supabase.co/functions/v1/www/`**
 
-## Done in this repo / live project
+GitHub Pages is blocked for the GitHub App token (`pages: create` → resource not accessible). The Engine is hosted on the same Supabase project instead: public bucket `engine-web` + Edge Function `www`.
 
 | Item | Status |
 | --- | --- |
-| Supabase Auth redirect allow-list includes GitHub Pages + local `:8766` | Applied to `orysjncrksmdfabpuftd` (`uri_allow_list`). `site_url` left as-is so Strength email links are not stolen. |
-| Private store `engine.integration_kv` | Migration `supabase/migrations/20260912120000_engine_integration_kv.sql` |
-| Edge Functions `whoop-connect`, `whoop-callback`, `whoop-sync`, `integrations-status`, `integrations-disconnect`, `brain-coach` | `supabase/functions/` |
-| Engine client | `ENGINE_CONFIG.functionsProvider = 'supabase'` |
+| Auth redirects | Pages URL, `localhost:8766`, and `…/functions/v1/www/**` |
+| `engine.integration_kv` | Applied |
+| Edge Functions | whoop-*, integrations-*, brain-coach, **www** |
+| Client | `functionsProvider: 'supabase'`, `publicOrigin` = `www` |
+| OpenRouter | Set on the project from the Strength vault |
+| WHOOP client id | Set (public OAuth id from the existing Netlify authorize URL) |
 
-Pages URL: `https://reflectprotect123-max.github.io/Engine-side-/`
-
-## You still need (cannot be done from this agent)
-
-1. **GitHub Pages** — Settings → Pages → Source: **GitHub Actions** if the workflow still cannot enable it. The workflow now requests `enablement: true`.
-2. **WHOOP developer portal** — redirect URI must include `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-callback`.
-3. **Supabase project secrets** (Dashboard → Edge Functions → Secrets, or `supabase secrets set`):
-   - `WHOOP_CLIENT_ID`
-   - `WHOOP_CLIENT_SECRET`
-   - `OPENROUTER_API_KEY` (coach only)
-   - `INTEGRATION_ENCRYPT_KEY` (set on first deploy if missing)
-   - `ENGINE_PUBLIC_ORIGIN=https://reflectprotect123-max.github.io/Engine-side-`
-
-Until WHOOP client id/secret are on the project, Connect returns `connection_unavailable`. Existing Netlify Blob tokens are **not** copied; athletes reconnect WHOOP once on Engine.
-
-Strength/Brain can keep `thehybridsystem.netlify.app` until they migrate.
+WHOOP **client secret** is only on Netlify env (not in git). Connect can start OAuth; token exchange needs that secret on this project, and the WHOOP app’s redirect list must include `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-callback` (today it is the Netlify callback).

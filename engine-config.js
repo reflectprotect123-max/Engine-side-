@@ -3,11 +3,10 @@
   global.ENGINE_CONFIG = {
     supabaseUrl: 'https://orysjncrksmdfabpuftd.supabase.co',
     supabaseAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeXNqbmNya3NtZGZhYnB1ZnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MTE4NzksImV4cCI6MjA5OTk4Nzg3OX0.GTMBfFtH5O6SikzHo75sXGIZoEhmuJ7TvXiACd7T078',
-    publicOrigin: 'https://reflectprotect123-max.github.io/Engine-side-/',
+    publicOrigin: 'https://orysjncrksmdfabpuftd.supabase.co/functions/v1/www/',
     /**
-     * Static site is GitHub Pages. WHOOP/coach tokens still live on Strength/Brain
-     * Netlify until Edge Functions exist. Flip to 'supabase' after those deploy;
-     * then calls go to `${supabaseUrl}/functions/v1/<name>` with the Auth JWT.
+     * Static site is the `www` Edge Function (GitHub App cannot enable Pages).
+     * WHOOP/coach go to `${supabaseUrl}/functions/v1/<name>` with the Auth JWT.
      */
     functionsProvider: 'supabase',
     netlifyLegacyOrigin: 'https://thehybridsystem.netlify.app'
