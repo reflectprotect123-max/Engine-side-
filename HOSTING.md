@@ -15,7 +15,7 @@ Pages URL: `https://reflectprotect123-max.github.io/Engine-side-/`
 
 ## You still need (cannot be done from this agent)
 
-1. **GitHub → Settings → Pages → Source: GitHub Actions** if Pages is not already on (this token cannot enable it). Then merge to `main` so `.github/workflows/pages.yml` deploys `_site`.
+1. **GitHub Pages** — Settings → Pages → Source: **GitHub Actions** if the workflow still cannot enable it. The workflow now requests `enablement: true`.
 2. **WHOOP developer portal** — redirect URI must include `https://orysjncrksmdfabpuftd.supabase.co/functions/v1/whoop-callback`.
 3. **Supabase project secrets** (Dashboard → Edge Functions → Secrets, or `supabase secrets set`):
    - `WHOOP_CLIENT_ID`
