@@ -21,7 +21,7 @@ must(html.includes('hybrid-product" content="engine"'), 'html product stamp');
 must(html.includes('The Engine'), 'Engine title');
 must(html.includes('engine-config.js'), 'loads engine-config');
 must(html.includes('adaptive-bundle.js'), 'loads adaptive bundle');
-must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes("functionsProvider: 'supabase'"), 'WHOOP/coach use Supabase Edge Functions');
+must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes("functionsProvider: 'netlify-legacy'"), 'WHOOP uses Strength/Brain Netlify token store');
 must(readFileSync(join(root, 'engine-config.js'), 'utf8').includes('/functions/v1/www/'), 'public origin is supabase www host');
 must(existsSync(join(root, 'scripts/assemble-pages.sh')), 'Pages assemble script');
 must(existsSync(join(root, '.github/workflows/pages.yml')), 'Pages workflow');

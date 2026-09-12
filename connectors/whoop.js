@@ -98,7 +98,10 @@
   }
   async function hydrateAuth() {
     const changed = await syncAuthEmail();
-    if (changed && typeof global.render === 'function') global.render();
+    try {
+      if (await token()) await refreshStatus();
+    } catch (_) { /* not linked yet */ }
+    if (typeof global.render === 'function') global.render();
     return changed;
   }
   async function token() {
