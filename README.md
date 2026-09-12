@@ -14,6 +14,10 @@ Do not merge this back into `apps/athlete/` or `apps/engine/` on strengthside.
 | `packages/adaptive/` | `@hybrid/adaptive` cond Open/Next/Close |
 | `scripts/bundle-adaptive.mjs` | IIFE → `adaptive-bundle.js` |
 
+## Hosting
+
+Keep **Supabase** project `orysjncrksmdfabpuftd` (Auth + optional later Engine tables). Static site: **GitHub Pages**, not Netlify. See `HOSTING.md`.
+
 ## Play
 
 ```bash

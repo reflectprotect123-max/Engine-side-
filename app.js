@@ -808,8 +808,8 @@ async function askCoach() {
   renderCoachSheetLog();
   try {
     const coachUrl = (window.Whoop && typeof Whoop.fnUrl === 'function')
-      ? Whoop.fnUrl('/.netlify/functions/brain-coach')
-      : 'https://thehybridsystem.netlify.app/.netlify/functions/brain-coach';
+      ? Whoop.fnUrl('brain-coach')
+      : (window.ENGINE_CONFIG && ENGINE_CONFIG.netlifyLegacyOrigin || 'https://thehybridsystem.netlify.app') + '/.netlify/functions/brain-coach';
     const res = await fetch(coachUrl, {
       method: 'POST',
       headers: {

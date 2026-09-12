@@ -1,41 +1,50 @@
 /* WHOOP bridge — OAuth tokens stay on THE-HYBRID-ENGINE1; this page proxies + maps. */
 (function (global) {
-  const SUPABASE_URL = "https://orysjncrksmdfabpuftd.supabase.co";
-  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yeXNqbmNya3NtZGZhYnB1ZnRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0MTE4NzksImV4cCI6MjA5OTk4Nzg3OX0.GTMBfFtH5O6SikzHo75sXGIZoEhmuJ7TvXiACd7T078";
-  const ATHLETE_NETLIFY = 'https://thehybridsystem.netlify.app';
-  const NATIVE_APP_ID = 'com.hybrid.athlete';
-  function athleteNetlify() {
-    return ATHLETE_NETLIFY;
+  function cfg() {
+    return global.ENGINE_CONFIG || {};
   }
+  const SUPABASE_URL = cfg().supabaseUrl || 'https://orysjncrksmdfabpuftd.supabase.co';
+  const SUPABASE_ANON = cfg().supabaseAnon || '';
+  const NATIVE_APP_ID = 'com.hybrid.athlete';
   function nativeAppId() {
     return NATIVE_APP_ID;
   }
   const FN = {
-    connect: '/.netlify/functions/whoop-connect',
-    sync: '/.netlify/functions/whoop-sync',
-    status: '/.netlify/functions/integrations-status',
-    disconnect: '/.netlify/functions/integrations-disconnect'
+    connect: 'whoop-connect',
+    sync: 'whoop-sync',
+    status: 'integrations-status',
+    disconnect: 'integrations-disconnect',
+    coach: 'brain-coach'
   };
+  function functionName(path) {
+    return String(path || '').replace(/^\/?\.netlify\/functions\//, '').replace(/^\//, '').split('?')[0];
+  }
   function resolveProxyBase() {
-    const ATHLETE_NETLIFY = athleteNetlify();
+    const c = cfg();
+    if ((c.functionsProvider || 'netlify-legacy') === 'supabase') {
+      return String(c.supabaseUrl || SUPABASE_URL).replace(/\/$/, '') + '/functions/v1';
+    }
+    const origin = c.netlifyLegacyOrigin || 'https://thehybridsystem.netlify.app';
     try {
       const loc = global.location;
-      if (!loc || !loc.hostname) return ATHLETE_NETLIFY;
+      if (!loc || !loc.hostname) return origin;
       const host = String(loc.hostname).toLowerCase();
       let ownHost = '';
-      try { ownHost = new URL(ATHLETE_NETLIFY).hostname.toLowerCase(); } catch (_) {}
+      try { ownHost = new URL(origin).hostname.toLowerCase(); } catch (_) {}
       if (ownHost && host === ownHost) return '';
-      if (loc.protocol === 'file:' || loc.protocol === 'capacitor:') return ATHLETE_NETLIFY;
-      if (host === 'localhost' || host === '127.0.0.1') return ATHLETE_NETLIFY;
-      if (host.endsWith('.github.io')) return ATHLETE_NETLIFY;
-      return ATHLETE_NETLIFY;
-    } catch (_) { return ATHLETE_NETLIFY; }
+      return origin;
+    } catch (_) { return origin; }
   }
   function fnUrl(path, query) {
+    const name = functionName(path);
     const q = query ? '?' + new URLSearchParams(query) : '';
-    const rel = path + q;
-    const base = resolveProxyBase();
-    return base ? base.replace(/\/$/, '') + rel : rel;
+    const base = resolveProxyBase().replace(/\/$/, '');
+    const c = cfg();
+    if ((c.functionsProvider || 'netlify-legacy') === 'supabase') {
+      return base + '/' + name + q;
+    }
+    const rel = '/.netlify/functions/' + name + q;
+    return base ? base + rel : rel;
   }
   let sb = null;
   const ui = { busy: false, message: '' };
