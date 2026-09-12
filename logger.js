@@ -1,6 +1,6 @@
 (function (root) {
   const QUOTE = 'You can’t do in a race what you haven’t prepared for.';
-  const COACH = 'Train with intent. Log every set. Leave the gym already recovering. Rest as prescribed — the clock comes next.';
+  const COACH = 'Hold the talk-test. Log every bout. Rest as prescribed — the clock comes next.';
 
   let pad = null;
   let sheet = null;
@@ -481,7 +481,8 @@
         </label>
         <p class="eng-hint">1 conversation · 7 short phrases · 10 cannot speak</p>
         <button type="button" class="log-primary" onclick="Logger.engineRate(false)">Log bout</button>
-        <button type="button" class="eng-stop" onclick="Logger.engineRate(true)">Stopped</button>`;
+        <button type="button" class="eng-stop" onclick="Logger.engineRate(true)">Stopped</button>
+        <label class="eng-cooked"><input type="checkbox" ${e.cooked ? 'checked' : ''} onchange="Logger.engineCooked(this.checked)"> Still cooked</label>`;
     } else if (e.phase === 'rest') {
       stage = `
         <p class="eng-phase">Rest ${e.restSec}s</p>
@@ -767,6 +768,12 @@
       s.logs[page.id].engine.slider = Number(v);
       persist(s);
     },
+    engineCooked(on) {
+      const s = JSON.parse(JSON.stringify(session()));
+      const page = HybridSession.currentPage(s);
+      s.logs[page.id].engine.cooked = !!on;
+      persist(s);
+    },
     engineRate(stopped) {
       const s = session();
       const page = HybridSession.currentPage(s);
@@ -774,6 +781,7 @@
       persistEngine(HybridEngine.rateWork(log, {
         actualRpe: log.engine.slider,
         stopped: !!stopped,
+        cooked: !!log.engine.cooked,
         now: Date.now(),
       }, root.HybridAdaptive));
     },

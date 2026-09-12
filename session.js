@@ -14,9 +14,7 @@
   function logModeFor(block, rx) {
     if (block.kind === 'engine') return 'engine';
     if (block.kind === 'warmup' || block.kind === 'recovery') return 'complete';
-    if (rx.isMax) return 'max';
-    if (/^F\d/i.test(block.letter || '')) return 'reps';
-    return 'kg';
+    return 'complete';
   }
 
   function emptySets(page) {
@@ -130,7 +128,7 @@
   function pagesFromPlan(plan) {
     const members = [];
     for (const block of (plan && plan.blocks) || []) {
-      if (!block || block.kind === 'section') continue;
+      if (!block || block.kind === 'section' || block.kind === 'lift') continue;
       members.push(pageFromBlock(block));
     }
     const pages = [];
