@@ -780,7 +780,7 @@
     engineSkipRest() {
       const s = session();
       const page = HybridSession.currentPage(s);
-      persistEngine(HybridEngine.skipRest(s.logs[page.id]));
+      persistEngine(HybridEngine.skipRestAndStart(s.logs[page.id], Date.now()));
     },
     engineTyped(raw) {
       const n = Number(raw);

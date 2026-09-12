@@ -42,6 +42,8 @@ must(!libUi.includes('Create Session Template'), 'no Strength template CTA');
 must(!libUi.includes('+ Add Exercise'), 'Engine editor does not add lifts');
 must(lib.includes("lane: kind") || lib.includes("lane: 'engine'"), 'templates are engine lane');
 must(readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextCond'), 'Next calls adaptive cond');
+must(readFileSync(join(root, 'engine.js'), 'utf8').includes('softenOpen'), 'Open applies WHOOP soften');
+must(readFileSync(join(root, 'logger.js'), 'utf8').includes('skipRestAndStart'), 'Skip rest starts next work');
 must(!readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextLift'), 'Engine product never calls lift Next');
 must(readFileSync(join(root, 'logger.js'), 'utf8').includes('How hard was that'), 'RPE after work');
 must(js.includes('function trnEngineHtml'), 'Training Engine cards');

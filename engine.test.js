@@ -173,6 +173,41 @@ test('tempo and steady rate once then close; Close is last made work', () => {
   assert.equal(closed.watts, 180);
 });
 
+test('low WHOOP recovery softens last Close Open, never typed watts', () => {
+  const fromClose = Eng.openPiece({ machine: 'bike', effort: 'medium' }, { watts: 200 }, Ad, 20);
+  assert.equal(fromClose.target.watts, 188);
+  const typed = Eng.openPiece({
+    machine: 'bike',
+    effort: 'medium',
+    typedWatts: 200,
+  }, { watts: 240 }, Ad, 20);
+  assert.equal(typed.target.watts, 200);
+  const high = Eng.openPiece({ machine: 'bike', effort: 'medium' }, { watts: 200 }, Ad, 80);
+  assert.equal(high.target.watts, 200);
+});
+
+test('fan rpm Next is rpm not watts; skip rest starts the next work clock', () => {
+  let log = Eng.readyLog({
+    machine: 'fan',
+    structure: 'intervals',
+    effort: 'hard',
+    workSec: 20,
+    restSec: 10,
+    rounds: 3,
+    typedRpm: 80,
+  }, Ad);
+  log = Eng.startWork(log, 0);
+  log = Eng.endWork(log, 20_000);
+  log = Eng.rateWork(log, { actualRpe: 5, now: 20_000 }, Ad);
+  assert.equal(log.engine.target.rpm, 82);
+  assert.equal(log.engine.target.watts, null);
+  assert.equal(log.engine.phase, 'rest');
+  log = Eng.skipRestAndStart(log, 25_000);
+  assert.equal(log.engine.phase, 'work');
+  assert.equal(log.engine.workEndsAt, 45_000);
+  assert.equal(log.engine.restEndsAt, null);
+});
+
 test('prescription copy is splits/watts/rpm, never a strength set grid', () => {
   assert.match(Eng.rxText({
     machine: 'row',

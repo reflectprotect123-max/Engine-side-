@@ -40,3 +40,35 @@ test('engine piece is a cond logger page, not a strength set grid', () => {
   assert.equal(s.logs.A.engine.target.splitSec, 136);
   assert.equal(s.logs.A.sets.length, 0);
 });
+
+test('Open from last Close softens when WHOOP recovery is low', () => {
+  const prev = globalThis.S;
+  globalThis.S = {
+    checkin: { '2026-09-11': { whoopRecovery: 20 } },
+    engineAnchors: { bike: { watts: 200 } },
+  };
+  try {
+    const s = HybridSession.startSession({
+      date: '2026-09-11',
+      letter: 'A',
+      plan: {
+        title: 'Bike',
+        blocks: [{
+          kind: 'engine',
+          letter: 'A',
+          title: 'Bike',
+          machine: 'bike',
+          structure: 'intervals',
+          effort: 'medium',
+          workSec: 15,
+          restSec: 45,
+          rounds: 4,
+          section: 'The Engine',
+        }],
+      },
+    });
+    assert.equal(s.logs.A.engine.target.watts, 188);
+  } finally {
+    globalThis.S = prev;
+  }
+});
