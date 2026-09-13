@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node scripts/bundle-adaptive.mjs",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test && node --test engine.test.js library.test.js session.test.js",
+    "test": "pnpm -r test && node --test engine.test.js library.test.js session.test.js supabase/functions/_shared/auth-exports.test.js",
     "verify": "pnpm run typecheck && pnpm run test && pnpm run build && node checks/engine-app.smoke.mjs"
   },
   "devDependencies": {

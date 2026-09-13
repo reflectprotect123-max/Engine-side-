@@ -52,6 +52,13 @@ export function publicOrigin(product: HybridProduct): string {
   return product === 'strength' ? strengthPublicOrigin() : enginePublicOrigin();
 }
 
+export function whoopCallbackUrl(): string {
+  const explicit = (Deno.env.get('WHOOP_CALLBACK_URL') || '').trim();
+  if (explicit) return explicit;
+  const base = (Deno.env.get('SUPABASE_URL') || '').replace(/\/$/, '');
+  return `${base}/functions/v1/whoop-callback`;
+}
+
 export function nativeReturnUrl(product: HybridProduct = 'engine'): string {
   if (product === 'strength') {
     return Deno.env.get('STRENGTH_NATIVE_RETURN_URL') || 'com.hybrid.athlete://whoop';

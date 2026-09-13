@@ -28,6 +28,8 @@ TRACK (Strength) is `functions/v1/strength/` — WHOOP keys `token:whoop:s:<uuid
 
 WHOOP dashboard must list **only** those two Edge URLs. Concept2 is retired. `thehybridsystem.netlify.app` and `thehybridengine1.netlify.app` are 404.
 
+`whoop.ts` imports `whoopCallbackUrl()` from `_shared/auth.ts`. Dropping that export boots `whoop-callback` into HTTP 503 `BOOT_ERROR` (OAuth return dies). Restore the helper, then redeploy `whoop-callback` and `whoop-connect`.
+
 Sibling GitHub repos: `strengthside`, `THE-HYBRID-ENGINE1`. `nutrition` / `the-brain` 404 for this token.
 
 Capgo: Engine `com.hybrid.engine`. TRACK `com.hybrid.athlete` (bundle **1.0.82** on live + dogfood, Supabase WHOOP).
