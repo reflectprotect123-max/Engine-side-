@@ -266,6 +266,33 @@ button {
   letter-spacing: 0.22em;
 }
 
+.ath-zones {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ath-zone-est {
+  margin: 0 0 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.ath-zones ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
 .ath-whoop-dials,
 .gauge-row {
   display: flex;

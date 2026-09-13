@@ -53,14 +53,18 @@ must(libUi.includes('>Engine session<') || libUi.includes('>Engine session</h1>'
 must(!libUi.includes('Create Session Template'), 'no Strength template CTA');
 must(!libUi.includes('+ Add Exercise'), 'Engine editor does not add lifts');
 must(!lib.includes('Bench Press'), 'library catalog is not TRACK lifts');
-must(readFileSync(join(root, 'logger.js'), 'utf8').includes('cooked: !!log.engine.cooked'), 'rate UI can mark still cooked');
 must(!readFileSync(join(root, 'logger.js'), 'utf8').includes('Leave the gym already recovering'), 'logger copy is not Strength gym');
 must(lib.includes("lane: kind") || lib.includes("lane: 'engine'"), 'templates are engine lane');
-must(readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextCond'), 'Next calls adaptive cond');
 must(readFileSync(join(root, 'engine.js'), 'utf8').includes('softenOpen'), 'Open applies WHOOP soften');
 must(readFileSync(join(root, 'logger.js'), 'utf8').includes('skipRestAndStart'), 'Skip rest starts next work');
 must(!readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextLift'), 'Engine product never calls lift Next');
-must(readFileSync(join(root, 'logger.js'), 'utf8').includes('How hard was that'), 'RPE after work');
+must(readFileSync(join(root, 'logger.js'), 'utf8').includes('engineEffort'), 'rest EMH effort buttons');
+must(readFileSync(join(root, 'logger.js'), 'utf8').includes('How was that interval'), 'EMH prompt on rest');
+must(!readFileSync(join(root, 'logger.js'), 'utf8').includes('engineRate'), 'RPE rate removed');
+must(readFileSync(join(root, 'engine.js'), 'utf8').includes('decideNextEngine'), 'Next uses brain kernel');
+must(readFileSync(join(root, 'engine.js'), 'utf8').includes('recordEffort'), 'recordEffort replaces rateWork');
+must(readFileSync(join(root, 'app.js'), 'utf8').includes('ath-zones'), 'home zone card');
+must(readFileSync(join(root, 'index.html'), 'utf8').includes('brain-kernel.js'), 'loads brain kernel');
 must(js.includes('function trnEngineHtml'), 'Training Engine cards');
 must(js.includes('THE-hybrid-engine-v1') && !js.includes("STORAGE_KEY = 'THE-brain-v1'"), 'storage is not the Strength key');
 

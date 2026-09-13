@@ -7,10 +7,12 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const dir = dirname(fileURLToPath(import.meta.url));
 
+require(join(dir, 'brain-kernel.js'));
 require(join(dir, 'adaptive-bundle.js'));
 require(join(dir, 'engine.js'));
 const Eng = globalThis.HybridEngine;
 const Ad = globalThis.HybridAdaptive;
+const Kernel = globalThis.HybridBrainKernel;
 
 test('effort chips map to talk-test bands, not a typed 7-8 box', () => {
   assert.deepEqual(Eng.bandFor('easy'), { min: 3, max: 4 });
@@ -58,7 +60,24 @@ test('open writes last Close even if a leftover typed number exists', () => {
   assert.equal(fromClose.target.watts, 210);
 });
 
-test('after work, easy vs hard chip adds 3% watts; rest seconds stay on the card', () => {
+test('endWork goes to rest with needsEffort, not rate', () => {
+  let log = Eng.readyLog({
+    machine: 'bike',
+    structure: 'intervals',
+    effort: 'hard',
+    workSec: 15,
+    restSec: 45,
+    rounds: 8,
+    typedWatts: 220,
+  }, Ad);
+  log = Eng.startWork(log, 1_000);
+  log = Eng.endWork(log, 16_000);
+  assert.equal(log.engine.phase, 'rest');
+  assert.equal(log.engine.needsEffort, true);
+  assert.notEqual(log.engine.phase, 'rate');
+});
+
+test('recordEffort applies EMH watt table; rest seconds stay on the card', () => {
   let log = Eng.readyLog({
     machine: 'bike',
     structure: 'intervals',
@@ -71,19 +90,19 @@ test('after work, easy vs hard chip adds 3% watts; rest seconds stay on the card
   assert.equal(log.engine.target.watts, 220);
   assert.equal(log.engine.restSec, 45);
   log = Eng.startWork(log, 1_000);
-  assert.equal(log.engine.phase, 'work');
   log = Eng.endWork(log, 16_000);
-  assert.equal(log.engine.phase, 'rate');
-  log = Eng.rateWork(log, { actualRpe: 5 }, Ad);
-  assert.equal(log.engine.target.watts, 227);
+  assert.equal(log.engine.needsEffort, true);
+  log = Eng.recordEffort(log, 'easy', Ad, 16_000);
+  assert.equal(log.engine.target.watts, 231);
   assert.equal(log.engine.restSec, 45);
+  assert.equal(log.engine.needsEffort, false);
   assert.equal(log.engine.phase, 'rest');
   assert.equal(log.engine.roundIndex, 1);
   assert.equal(log.engine.rounds, 8);
 });
 
-test('too hard and stop cut watts; Next never returns a new rest duration', () => {
-  let hard = Eng.readyLog({
+test('hard reported on medium cuts watts via decideNextEngine', () => {
+  let log = Eng.readyLog({
     machine: 'bike',
     structure: 'intervals',
     effort: 'medium',
@@ -92,26 +111,11 @@ test('too hard and stop cut watts; Next never returns a new rest duration', () =
     rounds: 4,
     typedWatts: 220,
   }, Ad);
-  hard = Eng.startWork(hard, 0);
-  hard = Eng.endWork(hard, 15_000);
-  hard = Eng.rateWork(hard, { actualRpe: 9 }, Ad);
-  assert.equal(hard.engine.target.watts, 209);
-  assert.equal(hard.engine.restSec, 45);
-
-  let stop = Eng.readyLog({
-    machine: 'bike',
-    structure: 'intervals',
-    effort: 'hard',
-    workSec: 15,
-    restSec: 45,
-    rounds: 4,
-    typedWatts: 220,
-  }, Ad);
-  stop = Eng.startWork(stop, 0);
-  stop = Eng.endWork(stop, 10_000);
-  stop = Eng.rateWork(stop, { actualRpe: 10, stopped: true }, Ad);
-  assert.equal(stop.engine.target.watts, 202);
-  assert.equal(stop.engine.restSec, 45);
+  log = Eng.startWork(log, 0);
+  log = Eng.endWork(log, 15_000);
+  log = Eng.recordEffort(log, 'hard', Ad, 15_000);
+  assert.equal(log.engine.target.watts, 213);
+  assert.equal(log.engine.restSec, 45);
 });
 
 test('row split Next is seconds not watts; rest clock unchanged', () => {
@@ -126,35 +130,29 @@ test('row split Next is seconds not watts; rest clock unchanged', () => {
   }, Ad);
   log = Eng.startWork(log, 0);
   log = Eng.endWork(log, 15_000);
-  log = Eng.rateWork(log, { actualRpe: 5 }, Ad);
+  log = Eng.recordEffort(log, 'medium', Ad, 15_000);
   assert.equal(log.engine.target.splitSec, 119);
   assert.equal(log.engine.target.watts, null);
   assert.equal(log.engine.restSec, 45);
 });
 
-test('still cooked on the next hard cuts work, never lengthens rest', () => {
+test('incomplete work cannot increase output', () => {
   let log = Eng.readyLog({
     machine: 'bike',
     structure: 'intervals',
-    effort: 'hard',
+    effort: 'medium',
     workSec: 15,
     restSec: 45,
     rounds: 4,
-    typedWatts: 220,
+    typedWatts: 200,
   }, Ad);
   log = Eng.startWork(log, 0);
-  log = Eng.endWork(log, 15_000);
-  log = Eng.rateWork(log, { actualRpe: 8 }, Ad);
-  assert.equal(log.engine.target.watts, 220);
-  log = Eng.skipRest(log);
-  log = Eng.startWork(log, 60_000);
-  log = Eng.endWork(log, 75_000);
-  log = Eng.rateWork(log, { actualRpe: 8, cooked: true }, Ad);
-  assert.equal(log.engine.target.watts, 209);
-  assert.equal(log.engine.restSec, 45);
+  log = Eng.endWork(log, 10_000, true);
+  log = Eng.recordEffort(log, 'easy', Ad, 10_000);
+  assert.equal(log.engine.target.watts, 200);
 });
 
-test('tempo and steady rate once then close; Close is last made work', () => {
+test('tempo and steady recordEffort once then close; Close is last made work', () => {
   let log = Eng.readyLog({
     machine: 'bike',
     structure: 'steady',
@@ -166,16 +164,16 @@ test('tempo and steady rate once then close; Close is last made work', () => {
   }, Ad);
   log = Eng.startWork(log, 0);
   log = Eng.endWork(log, 480_000);
-  log = Eng.rateWork(log, { actualRpe: 6 }, Ad);
+  log = Eng.recordEffort(log, 'medium', Ad, 480_000);
   assert.equal(log.engine.phase, 'done');
   const closed = Eng.closePiece(log, Ad);
   assert.equal(closed.ok, true);
   assert.equal(closed.watts, 180);
 });
 
-test('low WHOOP recovery softens last Close Open, never typed watts', () => {
+test('low WHOOP recovery does not rewrite last Close output', () => {
   const fromClose = Eng.openPiece({ machine: 'bike', effort: 'medium' }, { watts: 200 }, Ad, 20);
-  assert.equal(fromClose.target.watts, 188);
+  assert.equal(fromClose.target.watts, 200);
   const typed = Eng.openPiece({
     machine: 'bike',
     effort: 'medium',
@@ -198,14 +196,57 @@ test('fan rpm Next is rpm not watts; skip rest starts the next work clock', () =
   }, Ad);
   log = Eng.startWork(log, 0);
   log = Eng.endWork(log, 20_000);
-  log = Eng.rateWork(log, { actualRpe: 5, now: 20_000 }, Ad);
-  assert.equal(log.engine.target.rpm, 82);
+  log = Eng.recordEffort(log, 'medium', Ad, 20_000);
+  assert.equal(log.engine.target.rpm, 81);
   assert.equal(log.engine.target.watts, null);
   assert.equal(log.engine.phase, 'rest');
   log = Eng.skipRestAndStart(log, 25_000);
   assert.equal(log.engine.phase, 'work');
   assert.equal(log.engine.workEndsAt, 45_000);
   assert.equal(log.engine.restEndsAt, null);
+});
+
+test('rateWork removed; recordEffort uses brain kernel', () => {
+  assert.equal(Eng.rateWork, undefined);
+  assert.equal(typeof Eng.recordEffort, 'function');
+  const out = Kernel.decideNextEngine({
+    machine: 'concept2',
+    intendedEffort: 'medium',
+    reportedEffort: 'easy',
+    actualOutput: 230,
+    complete: true,
+    unit: 'watts',
+  });
+  assert.equal(out.nextOutput, 237);
+});
+
+test('open without history does not invent watts', () => {
+  const opened = Eng.openPiece({ machine: 'bike', effort: 'medium' }, null, Ad);
+  assert.equal(opened.skipped, true);
+  assert.equal(opened.target.watts, null);
+});
+
+test('closePiece confirms two agreeing watt bouts via kernel', () => {
+  let log = Eng.readyLog({
+    machine: 'bike',
+    structure: 'intervals',
+    effort: 'medium',
+    workSec: 15,
+    restSec: 45,
+    rounds: 2,
+    typedWatts: 200,
+  }, Ad);
+  log = Eng.startWork(log, 0);
+  log = Eng.endWork(log, 15_000);
+  log = Eng.recordEffort(log, 'medium', Ad, 15_000);
+  log = Eng.skipRestAndStart(log, 16_000);
+  log = Eng.endWork(log, 31_000);
+  log = Eng.recordEffort(log, 'medium', Ad, 31_000);
+  const closed = Eng.closePiece(log, Ad);
+  assert.equal(closed.confidence, 'confirmed');
+  assert.equal(closed.canonicalOutput, 200);
+  assert.equal(closed.canonicalUnit, 'watts');
+  assert.ok(closed.ruleVersion);
 });
 
 test('prescription copy is splits/watts/rpm, never a strength set grid', () => {

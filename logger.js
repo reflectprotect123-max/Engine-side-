@@ -471,24 +471,25 @@
         <p class="eng-clock" id="engClock">${esc(remainLabel(e.workEndsAt, now))}</p>
         <p class="eng-target">${esc(target)}</p>
         <button type="button" class="eng-early" onclick="Logger.engineEnd()">End interval early</button>`;
-    } else if (e.phase === 'rate') {
-      const rpe = e.slider || 5;
-      stage = `
-        <p class="eng-phase">How hard was that?</p>
-        <p class="eng-target">${esc(target)}</p>
-        <label class="eng-rpe">RPE ${rpe}
-          <input type="range" min="1" max="10" step="1" value="${esc(rpe)}" oninput="Logger.engineSlider(this.value)">
-        </label>
-        <p class="eng-hint">1 conversation · 7 short phrases · 10 cannot speak</p>
-        <button type="button" class="log-primary" onclick="Logger.engineRate(false)">Log bout</button>
-        <button type="button" class="eng-stop" onclick="Logger.engineRate(true)">Stopped</button>
-        <label class="eng-cooked"><input type="checkbox" ${e.cooked ? 'checked' : ''} onchange="Logger.engineCooked(this.checked)"> Still cooked</label>`;
     } else if (e.phase === 'rest') {
+      const nextTarget = HybridEngine.formatTarget(e.target, e.modality) || target;
+      const restClock = e.restEndsAt != null ? `<p class="eng-clock" id="engClock">${esc(remainLabel(e.restEndsAt, now))}</p>` : '';
+      const effortBlock = e.needsEffort ? `
+        <p class="log-emh-label">How was that interval?</p>
+        <div class="log-intensity">
+          <button type="button" onclick="Logger.engineEffort('easy')">Easy</button>
+          <button type="button" onclick="Logger.engineEffort('medium')">Medium</button>
+          <button type="button" onclick="Logger.engineEffort('hard')">Hard</button>
+        </div>` : '';
+      const skipBtn = e.needsEffort ? '' : `<button type="button" class="log-primary" onclick="Logger.engineSkipRest()">Skip · start work</button>`;
+      const upNextBlock = e.needsEffort ? '' : `<p class="eng-target">Up next · ${esc(nextTarget)}</p>`;
       stage = `
-        <p class="eng-phase">Rest ${e.restSec}s</p>
-        <p class="eng-clock" id="engClock">${esc(remainLabel(e.restEndsAt, now))}</p>
-        <p class="eng-up">Up next work ${Math.min(e.rounds, e.roundIndex + 1)}/${e.rounds} · ${esc(target)}</p>
-        <button type="button" class="log-primary" onclick="Logger.engineSkipRest()">Skip · start work</button>`;
+        <p class="eng-phase">Rest</p>
+        ${restClock}
+        <p class="eng-up">Last interval · ${esc(target)}</p>
+        ${effortBlock}
+        ${upNextBlock}
+        ${skipBtn}`;
     } else {
       stage = `
         <p class="eng-phase">Piece done</p>
@@ -760,30 +761,14 @@
     engineEnd() {
       const s = session();
       const page = HybridSession.currentPage(s);
-      persistEngine(HybridEngine.endWork(s.logs[page.id], Date.now()));
+      persistEngine(HybridEngine.endWork(s.logs[page.id], Date.now(), true));
     },
-    engineSlider(v) {
-      const s = JSON.parse(JSON.stringify(session()));
-      const page = HybridSession.currentPage(s);
-      s.logs[page.id].engine.slider = Number(v);
-      persist(s);
-    },
-    engineCooked(on) {
-      const s = JSON.parse(JSON.stringify(session()));
-      const page = HybridSession.currentPage(s);
-      s.logs[page.id].engine.cooked = !!on;
-      persist(s);
-    },
-    engineRate(stopped) {
+    engineEffort(effort) {
       const s = session();
       const page = HybridSession.currentPage(s);
       const log = s.logs[page.id];
-      persistEngine(HybridEngine.rateWork(log, {
-        actualRpe: log.engine.slider,
-        stopped: !!stopped,
-        cooked: !!log.engine.cooked,
-        now: Date.now(),
-      }, root.HybridAdaptive));
+      if (!log.engine || !log.engine.needsEffort) return;
+      persistEngine(HybridEngine.recordEffort(log, effort, root.HybridAdaptive, Date.now()));
     },
     engineSkipRest() {
       const s = session();
@@ -897,7 +882,7 @@
       sheet = null;
       paint();
     },
-    doneTraining() { pad = null; persist(HybridSession.openFeel(session())); },
+    doneTraining() { pad = null; persist(HybridSession.openSummary(session())); },
     addExercise() {
       close();
       if (typeof root.openLibraryForDay === 'function') root.openLibraryForDay();

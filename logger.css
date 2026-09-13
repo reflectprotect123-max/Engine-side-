@@ -363,6 +363,13 @@
   background: #1c1c1e;
 }
 .log-intensity button.on { background: #1ba3ff; }
+
+.log-emh-label {
+  margin: 10px 0 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 600;
+}
 .log-dur { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; }
 .log-dur button {
   width: 44px;

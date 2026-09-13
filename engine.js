@@ -15,12 +15,18 @@
     run: { title: 'Run', modality: 'none' },
   };
 
+  const CONCEPT2_WATTS_FACTOR = 2.8;
+
   function clone(v) {
     return JSON.parse(JSON.stringify(v));
   }
 
   function ad(passed) {
     return passed || root.HybridAdaptive;
+  }
+
+  function kernel() {
+    return root.HybridBrainKernel;
   }
 
   function machineMeta(id) {
@@ -59,6 +65,16 @@
     return { watts: null, splitSec: null, rpm: null };
   }
 
+  function wattsFromSplitSec(splitSec) {
+    const pace = Number(splitSec) / 500;
+    return Math.round(CONCEPT2_WATTS_FACTOR / (pace * pace * pace));
+  }
+
+  function splitSecFromWatts(watts) {
+    const pace = Math.cbrt(CONCEPT2_WATTS_FACTOR / Number(watts));
+    return Math.round(500 * pace);
+  }
+
   function targetFromOpen(opened, modality) {
     const t = emptyTarget();
     if (!opened || !opened.ok) return t;
@@ -91,11 +107,55 @@
   }
 
   function openPiece(piece, lastClose, adaptive, recovery) {
-    const A = ad(adaptive);
     const modality = modalityFor(piece.machine, piece);
-    if (modality === 'none' || !A) {
+    if (modality === 'none') {
       return { ok: true, skipped: true, modality, target: emptyTarget() };
     }
+    const typed = typedFor(piece, modality);
+    const hasTyped = typed != null && Number.isFinite(Number(typed));
+    if (hasTyped) {
+      const t = emptyTarget();
+      if (modality === 'split') t.splitSec = Number(typed);
+      else if (modality === 'rpm') t.rpm = Number(typed);
+      else t.watts = Number(typed);
+      return { ok: true, skipped: false, modality, target: t };
+    }
+
+    const K = kernel();
+    if (K && typeof K.open === 'function') {
+      if (modality === 'split') {
+        if (lastClose && lastClose.splitSec != null) {
+          const t = emptyTarget();
+          t.splitSec = lastClose.splitSec;
+          return { ok: true, skipped: false, modality, target: t };
+        }
+        return { ok: true, skipped: true, modality, target: emptyTarget() };
+      }
+      const unit = modality === 'rpm' ? 'rpm' : 'watts';
+      let canonical = null;
+      if (lastClose) {
+        canonical = lastClose.canonicalOutput;
+        if (canonical == null) canonical = unit === 'rpm' ? lastClose.rpm : (lastClose.watts ?? lastClose.anchor);
+      }
+      const opened = K.open({
+        kind: 'engine',
+        anchor: canonical != null ? {
+          confidence: lastClose.confidence || 'provisional',
+          canonicalOutput: canonical,
+          canonicalUnit: unit,
+        } : null,
+      });
+      if (opened.needsFirstNumber || opened.target == null) {
+        return { ok: true, skipped: true, modality, target: emptyTarget() };
+      }
+      const t = emptyTarget();
+      if (unit === 'rpm') t.rpm = opened.target;
+      else t.watts = opened.target;
+      return { ok: true, skipped: false, modality, target: t };
+    }
+
+    const A = ad(adaptive);
+    if (!A) return { ok: true, skipped: true, modality, target: emptyTarget() };
     const opened = A.openCond({
       dayKind: 'conditioning',
       modality,
@@ -106,9 +166,7 @@
     });
     if (!opened || !opened.ok) return { ok: false, modality, target: emptyTarget() };
     let target = targetFromOpen(opened, modality);
-    const typed = typedFor(piece, modality);
-    const hasTyped = typed != null && Number.isFinite(Number(typed));
-    if (!hasTyped) target = softenTarget(target, modality, recovery, A);
+    target = softenTarget(target, modality, recovery, A);
     const blank = (modality === 'watts' && target.watts == null)
       || (modality === 'split' && target.splitSec == null)
       || (modality === 'rpm' && target.rpm == null);
@@ -137,7 +195,8 @@
         bouts: [],
         workEndsAt: null,
         restEndsAt: null,
-        slider: bandFor(piece.effort || 'medium').min,
+        needsEffort: false,
+        workComplete: true,
       },
     };
   }
@@ -148,22 +207,32 @@
     e.phase = 'work';
     e.workEndsAt = now + e.workSec * 1000;
     e.restEndsAt = null;
+    e.needsEffort = false;
+    e.workComplete = true;
     return s;
   }
 
-  function endWork(log, now) {
+  function endWork(log, now, early) {
     const s = clone(log);
     const e = s.engine;
-    e.phase = 'rate';
+    e.phase = 'rest';
+    e.needsEffort = true;
     e.workEndsAt = now;
+    e.workComplete = !early;
+    const more = e.structure === 'intervals' && (e.roundIndex + 1) < e.rounds;
+    if (more && e.restSec > 0) {
+      e.restEndsAt = now + e.restSec * 1000;
+    } else {
+      e.restEndsAt = null;
+    }
     return s;
   }
 
   function tick(log, now) {
     const e = log.engine;
     if (!e) return log;
-    if (e.phase === 'work' && e.workEndsAt != null && now >= e.workEndsAt) return endWork(log, now);
-    if (e.phase === 'rest' && e.restEndsAt != null && now >= e.restEndsAt) {
+    if (e.phase === 'work' && e.workEndsAt != null && now >= e.workEndsAt) return endWork(log, now, false);
+    if (e.phase === 'rest' && !e.needsEffort && e.restEndsAt != null && now >= e.restEndsAt) {
       const s = clone(log);
       s.engine.phase = 'ready';
       s.engine.restEndsAt = null;
@@ -172,54 +241,70 @@
     return log;
   }
 
-  function nextFromResult(res, modality) {
-    const t = emptyTarget();
-    if (!res || !res.ok || res.skipped) return { skipped: true, target: t };
-    if (modality === 'split' && res.splitSec != null) t.splitSec = res.splitSec;
-    else if (modality === 'rpm' && res.rpm != null) t.rpm = res.rpm;
-    else if (res.watts != null) t.watts = res.watts;
-    return { skipped: false, target: t };
+  function applyDecideNext(e, reportedEffort) {
+    const K = kernel();
+    if (!K || typeof K.decideNextEngine !== 'function') return null;
+    const intended = e.effort || 'medium';
+    const complete = e.workComplete !== false;
+    if (e.modality === 'rpm' && e.target.rpm != null) {
+      const out = K.decideNextEngine({
+        machine: 'echo',
+        intendedEffort: intended,
+        reportedEffort,
+        actualOutput: e.target.rpm,
+        complete,
+        unit: 'rpm',
+      });
+      return { ...e.target, rpm: out.nextOutput };
+    }
+    if (e.modality === 'watts' && e.target.watts != null) {
+      const out = K.decideNextEngine({
+        machine: 'concept2',
+        intendedEffort: intended,
+        reportedEffort,
+        actualOutput: e.target.watts,
+        complete,
+        unit: 'watts',
+      });
+      return { ...e.target, watts: out.nextOutput };
+    }
+    if (e.modality === 'split' && e.target.splitSec != null) {
+      const watts = wattsFromSplitSec(e.target.splitSec);
+      const out = K.decideNextEngine({
+        machine: 'concept2',
+        intendedEffort: intended,
+        reportedEffort,
+        actualOutput: watts,
+        complete,
+        unit: 'watts',
+      });
+      return { ...emptyTarget(), splitSec: splitSecFromWatts(out.nextOutput) };
+    }
+    return null;
   }
 
-  function rateWork(log, feel, adaptive) {
+  function recordEffort(log, reportedEffort, adaptive, now) {
     const s = clone(log);
     const e = s.engine;
-    const A = ad(adaptive);
-    const actualRpe = Number(feel.actualRpe);
-    const rpe = Number.isFinite(actualRpe) ? actualRpe : 0;
     const bout = {
-      rpe,
-      stopped: !!feel.stopped,
-      cooked: !!feel.cooked,
+      effort: reportedEffort,
       watts: e.target.watts,
       splitSec: e.target.splitSec,
       rpm: e.target.rpm,
     };
     e.bouts.push(bout);
-    if (!e.skipped && A && typeof A.decideNextCond === 'function') {
-      const res = A.decideNextCond({
-        dayKind: 'conditioning',
-        modality: e.modality,
-        targetRpe: bandFor(e.effort),
-        actualRpe: rpe,
-        stopped: !!feel.stopped,
-        cooked: !!feel.cooked,
-        currentWatts: e.target.watts == null ? undefined : e.target.watts,
-        currentSplitSec: e.target.splitSec == null ? undefined : e.target.splitSec,
-        currentRpm: e.target.rpm == null ? undefined : e.target.rpm,
-        actualWatts: feel.actualWatts,
-        actualSplitSec: feel.actualSplitSec,
-        actualRpm: feel.actualRpm,
-      });
-      const nxt = nextFromResult(res, e.modality);
-      if (!nxt.skipped) e.target = nxt.target;
+    if (!e.skipped) {
+      const next = applyDecideNext(e, reportedEffort);
+      if (next) e.target = next;
     }
+    e.needsEffort = false;
     e.roundIndex += 1;
     const more = e.roundIndex < e.rounds && e.structure === 'intervals';
     if (more) {
       e.phase = 'rest';
-      e.restEndsAt = (feel.now || Date.now()) + e.restSec * 1000;
-      e.workEndsAt = null;
+      if (e.restEndsAt == null && e.restSec > 0) {
+        e.restEndsAt = (now || Date.now()) + e.restSec * 1000;
+      }
     } else {
       e.phase = 'done';
       s.completed = true;
@@ -231,23 +316,41 @@
 
   function skipRest(log) {
     const s = clone(log);
+    if (s.engine.needsEffort) return log;
     s.engine.phase = 'ready';
     s.engine.restEndsAt = null;
     return s;
   }
 
   function skipRestAndStart(log, now) {
+    if (log.engine.needsEffort) return log;
     return startWork(skipRest(log), now);
   }
 
   function closePiece(log, adaptive) {
-    const A = ad(adaptive);
     const e = log.engine;
     const last = e.bouts[e.bouts.length - 1] || {};
     const lastMade = {};
     if (e.modality === 'rpm' && (last.rpm != null || e.target.rpm != null)) lastMade.rpm = last.rpm != null ? last.rpm : e.target.rpm;
     else if (e.modality === 'watts' && (last.watts != null || e.target.watts != null)) lastMade.watts = last.watts != null ? last.watts : e.target.watts;
     else if (e.modality === 'split' && (last.splitSec != null || e.target.splitSec != null)) lastMade.splitSec = last.splitSec != null ? last.splitSec : e.target.splitSec;
+    const K = kernel();
+    if (K && typeof K.close === 'function' && e.modality !== 'split') {
+      const unit = e.modality === 'rpm' ? 'rpm' : 'watts';
+      const observations = (e.bouts || [])
+        .map((b) => (unit === 'rpm' ? b.rpm : b.watts))
+        .filter((n) => typeof n === 'number');
+      const closed = K.close({ kind: 'engine', unit, observations });
+      return {
+        ok: true,
+        ...lastMade,
+        confidence: closed.confidence,
+        canonicalOutput: closed.anchor,
+        canonicalUnit: unit,
+        ruleVersion: closed.ruleVersion,
+      };
+    }
+    const A = ad(adaptive);
     if (!A || typeof A.closeCond !== 'function' || !Object.keys(lastMade).length) {
       return { ok: true, ...lastMade };
     }
@@ -284,7 +387,7 @@
     startWork,
     endWork,
     tick,
-    rateWork,
+    recordEffort,
     skipRest,
     skipRestAndStart,
     closePiece,

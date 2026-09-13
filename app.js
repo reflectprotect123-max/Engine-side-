@@ -273,6 +273,44 @@ function gaugeRowHtml() {
         </div>
         ${todayCallHtml()}
       </div>
+    </section>
+    ${zonesCardHtml(c)}`;
+}
+
+function zoneProfile() {
+  const z = S.settings?.zones || {};
+  const c = dailyCheckin(S.selectedDate, false) || dailyCheckin(today(), false) || {};
+  return {
+    hrMax: num(z.hrMax) || 190,
+    rhr28: num(z.rhr28) || num(c.restingHr) || 60,
+    bgBase: num(z.bgBase) || 138,
+    grBase: num(z.grBase) || 170.5,
+  };
+}
+
+function zonesCardHtml(checkin) {
+  if (!globalThis.HybridBrainKernel || typeof HybridBrainKernel.dailyZones !== 'function') return '';
+  const profile = zoneProfile();
+  const recovery = metricsFromCheckin(checkin || {}).recovery;
+  const connected = !!S.settings?.whoop?.connected;
+  const freshness = connected && recovery != null ? 'current' : 'missing';
+  const zones = HybridBrainKernel.dailyZones({
+    recovery,
+    freshness,
+    hrMax: profile.hrMax,
+    rhr28: profile.rhr28,
+    bgBase: profile.bgBase,
+    grBase: profile.grBase,
+  });
+  const note = freshness === 'current' ? '' : ' · no WHOOP adjustment today';
+  return `
+    <section class="ath-zones" aria-label="Heart rate zones">
+      <span class="ath-label">Today's zones</span>
+      <p class="ath-zone-est">Estimated from baseline${note}</p>
+      <ul>
+        <li>Blue → ${Math.round(zones.bgToday)} bpm</li>
+        <li>Green → ${Math.round(zones.grToday)} bpm</li>
+      </ul>
     </section>`;
 }
 
