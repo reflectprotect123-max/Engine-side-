@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const dir = dirname(fileURLToPath(import.meta.url));
+require(join(dir, 'brain-kernel.js'));
 require(join(dir, 'adaptive-bundle.js'));
 require(join(dir, 'engine.js'));
 require(join(dir, 'session.js'));
@@ -78,7 +79,28 @@ test('startSession never opens a kg TRACK page from a leftover lift block', () =
   assert.equal(work[0].machine, 'bike');
 });
 
-test('Open from last Close softens when WHOOP recovery is low', () => {
+test('doneTraining skips feel phase', () => {
+  const plan = {
+    title: 'Bike',
+    blocks: [{
+      kind: 'engine',
+      letter: 'done',
+      title: 'Done',
+      machine: 'bike',
+      structure: 'intervals',
+      effort: 'medium',
+      workSec: 15,
+      restSec: 45,
+      rounds: 1,
+      section: 'The Engine',
+    }],
+  };
+  let s = HybridSession.startSession({ date: '2026-09-07', plan, letter: 'done' });
+  s = HybridSession.openFeel(s);
+  assert.equal(s.phase, 'summary');
+});
+
+test('Open from last Close keeps output; WHOOP does not rewrite the anchor', () => {
   const prev = globalThis.S;
   globalThis.S = {
     checkin: { '2026-09-11': { whoopRecovery: 20 } },
@@ -104,7 +126,7 @@ test('Open from last Close softens when WHOOP recovery is low', () => {
         }],
       },
     });
-    assert.equal(s.logs.A.engine.target.watts, 188);
+    assert.equal(s.logs.A.engine.target.watts, 200);
   } finally {
     globalThis.S = prev;
   }

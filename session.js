@@ -344,8 +344,12 @@
   }
 
   function openFeel(session) {
+    return openSummary(session);
+  }
+
+  function openSummary(session) {
     const s = clone(session);
-    s.phase = 'feel';
+    s.phase = 'summary';
     const started = s.startedAt || Date.now();
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     s.feel = s.feel || {};
@@ -427,6 +431,7 @@
     totals,
     setWorkingMax,
     openFeel,
+    openSummary,
     setFeel,
     finishToSummary,
     summaryStats,
